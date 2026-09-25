@@ -10,12 +10,12 @@ in the latest sessions, why each decision was made, and what is left.
 
 The public site, blog and status page are live. The product is **built and
 tested but not deployed**: the API (FastAPI, Postgres, Redis and a worker) has
-about 160 routes and 134 passing tests; the app is a React 19 PWA with 44
-unit tests. Everything is on `main` in every repo, and the root repo pins each
+about 180 routes and 162 passing tests; the app is a React 19 PWA with 63
+unit tests, and every new screen was also driven end to end in a real browser. Everything is on `main` in every repo, and the root repo pins each
 component. **Pushing `main` in `web` or `blog` deploys it** (Cloudflare Pages is
 Git-connected). What blocks launch is two decisions only you can make, where
 the API runs and which email provider sends mail, plus the checklist in §6.
-The third round of features (§3b) was built on 25 September.
+The third and fourth rounds of features (§3b, §3c) were built on 25 September.
 
 ---
 
@@ -199,6 +199,38 @@ Also: export version 2 carries tags, gear, plans, chain requirements and
 buddies. `make recompute-all` backfills `user_stats.recent_weeks` after
 deploying, and should be run once on first deploy.
 
+## 3c. Fourth pass: pre-launch hardening and the rest of the list (25 September, night)
+
+You asked "what are all the features we can implement", then "Implementing
+them all", then "continue now properly … check everything properly".
+
+| Area | Built | Key decisions |
+| --- | --- | --- |
+| Terms versions | `TERMS_VERSION`, a gate when it changes, `POST /me/terms` | The gate steps aside on the export screen. Existing acceptances backfilled. **Bump the version with any material change to /terms or /privacy after launch.** |
+| Recovery | `/recover`: a 2FA recovery code sets a new password | Only for accounts with 2FA; everyone else goes through support. Same answer whether or not the account exists. |
+| Email change | Security → Email address | Needs the password; takes effect only via the link to the new address; the old address is told. |
+| Crash reports | Anonymous reports to our own API; a real error screen | Path only, never the query string; grouped; capped at 1000 groups. |
+| Abuse view | Admin → Ops: failed attempts by IP and account, sign-ups by IP | Keyed hashes; the account shown only if it exists; 30-day retention. |
+| Getting started | A checklist on Today | Ticks come from real state, never from a tap. |
+| Smart reminders | Nudge an hour before your usual time | Mode, not model; never in quiet hours; falls back to the fixed hour. |
+| Monthly goals, rest days | Progress card; "Resting today" in the log sheet; a dot on the grid | Neither touches the streak. |
+| Comeback, deload, freeze note | Coach cards | Suggestions only; deload needs 8 rated sessions. |
+| Supersets, warm-ups | Live workout | Rest waits for the last exercise in a superset; ramps from the empty bar in plate steps. |
+| Splits | From GPX/FIT, on the session screen | Interpolated at each kilometre; private. |
+| Plan sharing | Export/import as a file | Routines embedded by value; other people's custom exercises dropped. |
+| Plan challenges | "One plan" challenge kind | Everyone gets a copy; app-logged sessions count; joining switches your running plan (the app says so). |
+| Coach plans | Coach tab: progress and "Suggest a plan" | Needs the member's sharing consent; the member starts it. |
+| Buddy nudge | 5pm, buddy short with ≤2 days left | Once per week, never about a paused buddy. |
+| Announcements | Group owners/admins | Plain text, 5 a day, nothing between members to moderate. |
+| Not built | Exercise illustrations | Needs real artwork; placeholders would make the app worse. |
+
+**Found by driving the app in a browser, and fixed:** the local containers
+were running an image without `webauthn` (a rebuild fixed it; CI and
+production build fresh); a false "Travelling?" card for timezone aliases;
+"just now ago"; "1 members"/"1 days"; one-box week strips; a double-indented
+switch; a flaky sync test (passed 25 stress runs after the fix); the www
+header button wrapping at 360px. The dev database has no test accounts left.
+
 ## 4. What's left
 
 ### Needs your decision
@@ -264,6 +296,7 @@ Kept here so the next session doesn't ask again, and doesn't treat a
 | After that | "What about IONOS servers?" | Fine for this stack. Pick the **VPS** product (not Cloud Server or web hosting), the **4 GB** tier, an EU data centre, and check the minimum term and renewal price. Hetzner is still slightly easier (monthly, no commitment). **Still open.** |
 | After that | "How does this project use the scheduler and worker?" | Explained `app/worker.py`: one process, six jobs per tick, a Redis lock, dedupe keys, `--once` for cron. |
 | After that | "Before we deploy, what features can we implement?" then "Implement all of them" | §3b. |
+| After that | "What are all the features we can implement?", then "Implementing them all" and "continue now properly … check everything" | §3c. Four groups offered (pre-launch, streaks, training, social) plus a "not recommended" list: native apps, Strava/Garmin sync (third party), search-indexed public profiles. All four groups built; illustrations skipped as needing real art. |
 
 ### Standing rules that shaped the answers (from `CLAUDE.md`)
 
@@ -291,6 +324,8 @@ In order. Nothing below needs code, only your decisions and accounts.
    - fill `.env` (mode 0600) and run `make prod-config` until it's clean;
    - `make prod-up`, behind a TLS proxy forwarding to `127.0.0.1:8000`;
    - run `make recompute-all` once (backfills buddy and group streak data);
+   - leave `TERMS_VERSION` at `2026-09-25` for launch; bump it with any
+     later material change to /terms or /privacy;
    - attach `api.pacestreak.com` via that host (not a hand-made DNS record).
    - Passkeys are bound to `app.pacestreak.com`. Don't set `WEBAUTHN_RP_ID`
      to anything else, and never change it after launch.
