@@ -229,8 +229,11 @@ cd app && npm run dev         # :5173, talks to :8000
    `make backup` with off-host copies, and naming the providers on `/privacy`.
 5. **Cloudflare edge cache purge** for five stale files on `www` (dashboard
    only; the token is `zone:read`).
-6. The new privacy and terms pages need a qualified review before `web` is
-   pushed.
+6. The new privacy and terms pages are live but need a qualified review.
+
+The questions already asked (hosting, email, waitlist), the options offered
+and the user's answers are in `HANDOFF.md` §5. Don't re-ask; "decide later"
+means still open, not declined. The user's checklist is `HANDOFF.md` §6.
 
 Done since the audit: items 5–9 (per-post OG images, JSON-LD, prev/next,
 tags, privacy/terms). Item 10, the waitlist, was **skipped by the user**.

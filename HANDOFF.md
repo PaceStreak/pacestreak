@@ -168,10 +168,11 @@ done, except the cache purge, which needs the Cloudflare dashboard.
 | Housekeeping | `tsconfig.tsbuildinfo` is untracked and ignored. The merged branches were deleted on GitHub after checking each was contained in `main`. | |
 | Visual check | Logged in with headless Chromium and screenshotted Today, Training (pause), Progress, Recap, Data and Admin, and opened the pause sheet. This found and fixed the grid's off-screen toggle and the "SeptOct" label overlap. | |
 
-**Not pushed.** All of this is committed on `main` locally in each repo. Pushing
-`web` publishes the new privacy and terms. **Have someone qualified review
-them first**: they're accurate to the code, but they aren't legal advice, and
-they don't state a governing law.
+**Pushed to `main`** in every repo at your request, including `web`, so the
+new privacy policy and terms are live. They're accurate to the code, but
+they aren't legal advice and don't state a governing law. **Have someone
+qualified review them**, and update them the moment a hosting or email
+provider is chosen.
 
 ---
 
@@ -203,3 +204,77 @@ they don't state a governing law.
 
 - The waitlist: skipped at your request.
 - Volume, calorie or body leaderboards; third-party sync; analytics; pricing.
+
+---
+
+## 5. Every question asked, the options offered, and your answers
+
+Kept here so the next session doesn't ask again, and doesn't treat a
+"decide later" as a "no".
+
+### Questions asked with the question tool
+
+| # | Question | Options offered | Your answer | What it means now |
+| --- | --- | --- | --- | --- |
+| 1 | Where should the API (FastAPI + Postgres + Redis + worker) run in production? | **Small VPS (recommended)**: about €5 a month (e.g. Hetzner or DigitalOcean); a production compose stack with Caddy, backups and a deploy script. **Container platform**: Fly.io, Railway or Render; less ops, more cost, one more vendor. **Decide later**: build everything host-agnostic and leave deploy unwired. | **Decide later** | `api/compose.prod.yaml` runs on any Docker host behind any TLS proxy. Nothing is tied to a vendor. **Still open; it blocks launch.** |
+| 2 | Which email sender for verification and password-reset mail? | **Generic SMTP (recommended)**: harden the existing SMTP backend; works with Zoho, which already handles `hello@`, or any provider. **Cloudflare Email**: stays within the Cloudflare-only rule, but its sending API is newer, so it would need a new HTTP backend. **Decide later**: leave `console`; make SMTP production-ready but unconfigured. | **Decide later** | SMTP is hardened and provider-neutral; picking one is configuration only. Production refuses to start on `console`. **Still open; it blocks launch.** |
+| 3 | Build the real waitlist signup on www (Pages Function + KV)? It would be the first network request `web` ever makes. | **Skip it (recommended)**: keep `mailto:` until launch, when "Sign up" replaces it. **Build it**: Pages Function + KV, double opt-in, rate limited. | **Skip it** | Audit item 10 is closed as won't-do. `web` still makes no network requests. |
+
+### Choices you made in conversation
+
+| When | What you said | What was done |
+| --- | --- | --- |
+| Setting up locally | Asked how email verification ("OTP") works and how to log in | Explained that verification is a single-use **link**; with `console` email it prints to the API log. TOTP is the only numeric code. |
+| Setting up locally | "Create an admin account with email admin@pacestreak.com" | Created, with a temporary password (not stored in git). Now also possible with `make create-admin`. |
+| Setting up locally | "with port 8000 for backend api" / "my docker containers are running" | Standardised on the Docker API on :8000 and stopped a stray API on :8001. |
+| Setting up locally | Hit "password must be at least 16 characters" | Kept the 16-character minimum and used a longer password. |
+| Setting up locally | "That handle is reserved, I'm giving it pacestreak?" | Kept the reservation. Later solved properly with **official accounts**: an admin-only, audited grant that is the only path to `@pacestreak`. |
+| Handoff 1 | "Write a detailed handoff…" | `HANDOFF.md` |
+| Rebuild | "Update all the docs, rebuild the web repo as a full product site, write lots of blogs" | New site pages, 10 new posts, and every README, ARCHITECTURE and CHANGELOG updated. |
+| Features | "Implement all these [suggested features] … production grade" | Pause/injury mode, planned rest on the grid, weekly recap, GPX/FIT/CSV import, ICS feed, shortcuts, official account. |
+| Git | "Push all code to GitHub main, merge everything" | Fast-forward merges to `main` in all six repos; Cloudflare deployed `web` and `blog`. |
+| Git | "Make this root a repo with submodules, named `pacestreak`, private" | `PaceStreak/pacestreak` (private), with seven submodules plus `CLAUDE.md`, `HANDOFF.md` and `README.md`. The dev admin password was removed from the docs before the first commit. |
+| Remaining list | "Implement them all, production grade" | The whole of §3. |
+| This push | "Push all to GitHub on main, update all md files and the handoff" | This section, §6, and the push, including `web`'s legal pages. |
+| During that work | `/compact` typed mid-turn | It's a command you run yourself; it couldn't be run from inside the turn. |
+
+### Standing rules that shaped the answers (from `CLAUDE.md`)
+
+- Cloudflare free tier, and no third-party services, analytics or embeds.
+  That's why hosting and email are genuine decisions, not defaults.
+- No pricing claims anywhere.
+- No `Co-Authored-By: Claude` trailers; conventional commits; commits made as
+  AlzyWelzy.
+- Never create DNS records ahead of a real deployment (you'd get a 522).
+
+---
+
+## 6. Your checklist
+
+In order. Nothing below needs code, only your decisions and accounts.
+
+1. [ ] **Change the dev admin password:**
+   `cd api && make set-password email=admin@pacestreak.com`.
+2. [ ] **Get the privacy policy and terms reviewed** by someone qualified
+   (`web/src/pages/privacy.astro`, `terms.astro`). Add a governing-law
+   clause if the reviewer wants one.
+3. [ ] **Decide where the API runs** (question 1 above). Then:
+   - generate production keys: `openssl genrsa` for JWT, `make vapid` for push,
+     and a Fernet key for `TOTP_ENCRYPTION_KEY`;
+   - fill `.env` (mode 0600) and run `make prod-config` until it's clean;
+   - `make prod-up`, behind a TLS proxy forwarding to `127.0.0.1:8000`;
+   - attach `api.pacestreak.com` via that host (not a hand-made DNS record).
+4. [ ] **Decide the email provider** (question 2 above). Set `SMTP_*` and add
+   SPF, DKIM and DMARC DNS records for `pacestreak.com`.
+5. [ ] **Name both providers** on `/privacy` (the "Service providers"
+   section) and push `web`.
+6. [ ] **Deploy the app**: create the Pages project for `PaceStreak/app` and
+   attach `app.pacestreak.com` as a custom domain.
+7. [ ] **Schedule backups**: a daily `make backup` via cron or a systemd timer,
+   with `./backups` copied off the host.
+8. [ ] **Add monitors** for `api.pacestreak.com/health` and `app.pacestreak.com`
+   in `status/.upptimerc.yml`, only once they respond.
+9. [ ] **Purge the Cloudflare cache** for `www` (Caching → Purge; five stale
+   files).
+10. [ ] Optionally, give the brand an official account: create it, then
+    **Admin → People → Make official**, with handle `pacestreak`.

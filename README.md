@@ -18,8 +18,9 @@ working notes.
 ## Documents here
 
 - [`CLAUDE.md`](./CLAUDE.md): standing rules and traps. Read it first.
-- [`HANDOFF.md`](./HANDOFF.md): the latest detailed handoff, with decisions,
-  reasoning and what's left.
+- [`HANDOFF.md`](./HANDOFF.md): the latest detailed handoff, with every
+  decision and its reasoning, the questions asked and answers given (§5),
+  and the owner's checklist (§6).
 
 ## Working with it
 
