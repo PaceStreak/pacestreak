@@ -209,47 +209,41 @@ cd app && npm run dev         # :5173, talks to :8000
   through `POST /v1/admin/users/{id}/official`.
 - Email is `console`: verification and reset links print to the API log. There
   is no numeric OTP; TOTP is the only numeric code.
-- `api/keys/*.pem` were `chmod 644`'d as a dev workaround (container uid 1001
-  vs host uid 1000). Not acceptable in production.
+- Dev containers run as the host user (`HOST_UID`, default 1000), so
+  `api/keys/*.pem` stay 0600. Production takes keys as PEM environment
+  variables and mounts no key files.
 
 ## Outstanding work
 
 **Read `HANDOFF.md` for the full list and reasoning.** In short:
 
-### Launch blockers
+### What's left (details in HANDOFF.md §4)
 
-1. **Where the API runs.** It cannot run on the Cloudflare free tier. The user
-   must choose (VPS / container platform / managed Postgres / Workers+D1
-   rewrite). Everything below waits on this.
-2. Deploy `app` to Pages and attach `app.pacestreak.com` (custom domain on a
-   real deployment, never a hand-made DNS record).
-3. Production API config (`COOKIE_DOMAIN`, `COOKIE_SECURE`, `DEBUG=False`,
-   `TOTP_ENCRYPTION_KEY`, `CORS_ORIGINS`, `PUBLIC_API_URL`,
-   `REQUIRE_VERIFIED_EMAIL`).
-4. An email sender (needs the user's approval: third-party question).
-5. Privacy policy and terms rewritten for accounts and health data **before**
-   the first real signup. The current pages describe the website only.
-6. Key ownership instead of `chmod 644`; backups with a tested restore;
-   monitoring for the two new hosts.
+1. **Where the API runs** (the user's decision). `api/compose.prod.yaml` is
+   ready for any Docker host behind a TLS proxy: `make prod-config`, then
+   `make prod-up`.
+2. **Email provider** (the user's decision). SMTP is production-ready; set
+   `SMTP_*` and DNS (SPF, DKIM, DMARC).
+3. **Rotate the dev admin password:** `make set-password email=admin@pacestreak.com`.
+4. After deployment: custom domains, Upptime monitors, a daily
+   `make backup` with off-host copies, and naming the providers on `/privacy`.
+5. **Cloudflare edge cache purge** for five stale files on `www` (dashboard
+   only; the token is `zone:read`).
+6. The new privacy and terms pages need a qualified review before `web` is
+   pushed.
 
-### Site audit leftovers
+Done since the audit: items 5–9 (per-post OG images, JSON-LD, prev/next,
+tags, privacy/terms). Item 10, the waitlist, was **skipped by the user**.
 
-Items 6-9 are done (JSON-LD and `article:published_time`, prev/next, tags,
-privacy/terms/about). **Remaining:** item 5, per-post OG images for the blog,
-and item 10, real waitlist capture (**confirm with the user**; once the app
-launches, "Sign up" may replace it).
+The blog has **thirteen posts**.
 
-### Waiting on the user
+### Operations quick reference
 
-- **Cloudflare edge cache purge** for `/stamp.py`, `/README.md`,
-  `/CHANGELOG.md`, `/LICENSE` and `/.markdownlint.json` on `www` (dashboard:
-  Caching → Purge). The token is `zone:read` only.
-- **Merging the branches.** The site rebuild, ten new blog posts, the new
-  features and doc updates are on `feat/product-site` (web, blog) and
-  `docs/current-state` (app, api, infra, .github), **not `main`**. Merging
-  `web`/`blog` to `main` deploys them.
-
-The blog has **thirteen posts** (three from August, ten from 25 September).
+- Admin tooling: `make create-admin|set-password email=…`,
+  `python -m app.cli set-role`.
+- Backups: `make backup` (dumps, then test-restores);
+  `scripts/restore.sh FILE`.
+- CI runs in `api`, `app`, `web` and `blog`; `api` CI also runs `alembic check`.
 
 ## Corrections worth carrying forward
 

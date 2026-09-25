@@ -141,70 +141,65 @@ distinct hours, so the ordering of previous/next links is deterministic.
 
 ---
 
-## 3. What's left
+## 3. Second pass: the remaining list, implemented (25 September, later)
 
-### A. Launch blockers (in order)
+You asked for everything on the remaining list. You chose to **decide API
+hosting and email later** and to **skip the waitlist**. Everything else is
+done, except the cache purge, which needs the Cloudflare dashboard.
 
-1. **Decide where the API runs.** This is your decision. It can't run on the
-   Cloudflare free tier, and Python Workers rule out FastAPI. The options are
-   a small VPS, a container platform, managed Postgres, or a rewrite onto
-   Workers + D1. Everything below waits on this.
-2. Deploy `app` to Pages and attach `app.pacestreak.com` to a real deployment.
-   **Never create the DNS record by hand** (it would return 522). The
-   `noindex` header, `Disallow: /` and the real 404 are already in place.
-3. Production config: `COOKIE_DOMAIN=pacestreak.com`, `COOKIE_SECURE=True`,
-   `DEBUG=False`, `TOTP_ENCRYPTION_KEY`,
-   `CORS_ORIGINS=https://app.pacestreak.com`,
-   `PUBLIC_API_URL=https://api.pacestreak.com`, `REQUIRE_VERIFIED_EMAIL=True`.
-4. An email sender. This is a third-party question, so it needs your approval.
-   Cloudflare Email is the option that stays within the rules.
-5. **A privacy policy and terms written for accounts and health data**,
-   published before the first real signup. The current pages cover only the
-   website. They must also mention the calendar feed and file import.
-6. Key ownership instead of `chmod 644`; rotate the admin password; add
-   `make create-admin`.
-7. Postgres backups with a tested restore; add `api./health` and `app.` to
-   Upptime.
-8. Purge the stale edge cache on `www` (five leftover files; dashboard only).
+| Item | What was built | Why this way |
+| --- | --- | --- |
+| Production stack | `api/compose.prod.yaml`: required secrets, API on `127.0.0.1` only, a one-shot `migrate` service, read-only containers, `no-new-privileges`, memory limits, rotated logs. **Booted and smoke-tested in isolation** (migrate → healthy API → CLI admin → login with `__Secure-` cookies), then torn down. | Hosting is undecided, so it's host-agnostic: any Docker host behind any TLS proxy. |
+| Key handling | Keys can be injected as PEM environment variables and are read once per process. The dev override runs containers as the host user; **private keys are back to 0600**. | This removes the `chmod 644` workaround properly. Production never mounts key files. |
+| Email | SMTP: implicit TLS option, retries with backoff, Date/Message-ID/Reply-To/Auto-Submitted headers, RFC 8058 `List-Unsubscribe` plus a one-click POST endpoint. Production refuses `console` and refuses SMTP without TLS. | Provider-neutral, so choosing a provider later is configuration only. The docstring had cited RFC 8058, but no headers were actually sent. |
+| Admin tooling | `python -m app.cli create-admin / set-password / set-role`, plus `make` targets. Passwords are prompted for, never passed as arguments. `set-password` signs out every session. | Replaces the throwaway scratchpad script. |
+| Backups | `scripts/backup.sh` (checksummed, 0600, safe retention that never prunes the newest dump), `restore-check.sh` (restores into a scratch DB and compares the schema revision), and `restore.sh` (asks first). **Tested against the dev DB.** | A backup that has never been restored isn't a backup. |
+| CI | `api`: ruff, pytest against Postgres and Redis services, `alembic check`, image build. `app`: `npm ci`, tests, build, and dist checks (404, noindex, no inline scripts). The blog also checks share cards. | Pushed over SSH, which workflow files require. |
+| Code format | `api` Ruff-formatted in one formatting-only commit (`f9e558b`); 92 tests pass before and after. | Keeps `git blame` readable. |
+| Privacy and terms | Rewritten on `web` for accounts and health data, written against the code: each table and why it exists, who sees what, age rules, 30-day deletion plus 14-day backup expiry, providers (API host and email sender "named before launch"), and terms covering health, use, moderation and liability. | Required before the first real signup. |
+| Per-post share images | Built at build time with Satori and resvg into `dist/og/<slug>.png`. Noto Sans is vendored under the OFL. CI fails if a post has no card. | Audit item 5. Nothing runs in the browser. |
+| Group mute | `group_members.muted` (migration `d32eee1ab7f7`). Push and email are skipped for that group; the inbox still receives everything. | Mute shouldn't lose anything. |
+| Chart accessibility | A Chart/Table toggle on every bar chart and on the grid. The grid's toggle is sticky inside its horizontal scroller. | Values are available without hover or colour. |
+| i18n | `src/lib/i18n.ts`: a typed catalog, `Intl.PluralRules`, locale-aware numbers, per-key English fallback. Navigation is migrated. | Adding a language becomes a data change. |
+| Shortcut icons | Five distinct 96 px icons generated from Phosphor by `app/scripts/shortcut-icons.mjs`. | |
+| Easing back after a pause | After a pause of 2+ weeks, a card suggests target − 1 for a fortnight. It's a suggestion only, never applied automatically. | |
+| Admin "official" control | A sheet replaces `window.prompt`. | |
+| Outbox tests | 9 tests against a real IndexedDB (`fake-indexeddb`), including an edit made while a push is in flight. | This was the most important untested logic. |
+| Housekeeping | `tsconfig.tsbuildinfo` is untracked and ignored. The merged branches were deleted on GitHub after checking each was contained in `main`. | |
+| Visual check | Logged in with headless Chromium and screenshotted Today, Training (pause), Progress, Recap, Data and Admin, and opened the pause sheet. This found and fixed the grid's off-screen toggle and the "SeptOct" label overlap. | |
 
-### B. Before merging these branches
+**Not pushed.** All of this is committed on `main` locally in each repo. Pushing
+`web` publishes the new privacy and terms. **Have someone qualified review
+them first**: they're accurate to the code, but they aren't legal advice, and
+they don't state a governing law.
 
-- Log in to the dev app and click through: pausing and ending a pause, the
-  grid legend, `/recap`, the Data page's import and calendar sections, and
-  the official mark. None of this has been looked at in a browser yet.
-- Decide whether to squash or rename `docs/current-state` in `api`/`app`.
-- Commit or ignore `app/tsconfig.tsbuildinfo`, which is a build artifact
-  showing as modified.
+---
 
-### C. Site audit leftovers
+## 4. What's left
 
-- **Item 5:** per-post OG images for the blog, generated at build time. Every
-  post still shares `og.png`.
-- **Item 10:** real waitlist capture. **Confirm with you first.** Once the app
-  launches, "Sign up" may replace it.
+### Needs your decision
 
-### D. Engineering hygiene
+1. **Where the API runs.** The stack is ready to go on any Docker host. Once
+   you choose, fill `.env`, run `make prod-up`, and put a TLS proxy in front.
+2. **Email provider.** Set `SMTP_*`, then add SPF, DKIM and DMARC for the
+   sending domain.
+3. **Change the dev admin password:** `make set-password email=admin@pacestreak.com`.
 
-- CI for `api` (pytest against Postgres and Redis services) and `app`. Neither
-  repo has a workflow. Push workflow files over SSH (see `CLAUDE.md`).
-- The outbox has no tests, although `fake-indexeddb` is already a dev
-  dependency. The replace-on-edit and cursor logic deserves them.
-- `57d4716` in `api` isn't a conventional commit.
-- The admin UI uses `window.prompt` for official handles; replace it with a
-  sheet.
-- The whole of `api/app` isn't Ruff-formatted. Do that as one
-  formatting-only commit, never mixed with other changes.
+### Blocked on deployment
 
-### E. Further feature ideas (not approved)
+- Attach `app.pacestreak.com` and `api.pacestreak.com` as custom domains to
+  real deployments (never hand-made DNS records).
+- Then add both hosts to Upptime. Adding them before they exist would show a
+  permanent outage, which happened once already with `pacestreak.net`.
+- Schedule `make backup` daily and copy `./backups` off the host.
+- Name the API host and email provider on `/privacy`.
 
-- A per-group mute for notifications.
-- An accessibility pass on the charts: table views for BarChart and Heatmap.
-- i18n scaffolding (units already convert only at display).
-- Distinct shortcut icons.
-- A pause history view in the recap.
-- A "coming back" plan after a long pause: a lower target for the first two
-  weeks, suggested rather than imposed.
+### Needs the Cloudflare dashboard
 
-**Still deliberately not recommended:** volume, calorie or body leaderboards;
-Strava or Apple Health OAuth sync; analytics or embeds; anything about
-pricing.
+- Purge the stale edge cache on `www` (five leftover files). The token is
+  `zone:read` only.
+
+### Deliberately not done
+
+- The waitlist: skipped at your request.
+- Volume, calorie or body leaderboards; third-party sync; analytics; pricing.
