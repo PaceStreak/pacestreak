@@ -9,27 +9,13 @@ in the latest sessions, why each decision was made, and what is left.
 ## 0. State in one paragraph
 
 The public site, blog and status page are live. The product is **built and
-tested but not deployed**. The API (FastAPI, Postgres, Redis and a worker) has
-about 110 routes and 87 passing tests. The app is a React 19 PWA. The
-latest work is on branches, not `main`, so none of it is live yet:
-
-| Repo | Branch | Commits on it |
-| --- | --- | --- |
-| `web` | `feat/product-site` | Site rebuild; copy for the new features; docs |
-| `blog` | `feat/product-site` | Ten new posts (five committed by the user mid-session); changelog |
-| `api` | `docs/current-state` | Pauses, recap, file import, calendar feed, official accounts; docs |
-| `app` | `docs/current-state` | UI for all of the above; docs |
-| `infra` | `docs/current-state` | Two decisions recorded |
-| `.github` | `docs/current-state` | Org profile no longer says "not built yet" |
-
-Some of these branches were pushed to origin by the user during the session.
-None was merged. **Merging `web` or `blog` to `main` deploys it** (Cloudflare
-Pages is Git-connected). The branch name `docs/current-state` undersells the
-`api`/`app` branches, which carry real features, so rename or split them if
-that matters for review.
-
-`CLAUDE.md` has been updated to match reality. It had described `app` and
-`api` as "docs only", and listed audit items 6–9 as open when they were done.
+tested but not deployed**: the API (FastAPI, Postgres, Redis and a worker) has
+about 160 routes and 134 passing tests; the app is a React 19 PWA with 44
+unit tests. Everything is on `main` in every repo, and the root repo pins each
+component. **Pushing `main` in `web` or `blog` deploys it** (Cloudflare Pages is
+Git-connected). What blocks launch is two decisions only you can make, where
+the API runs and which email provider sends mail, plus the checklist in §6.
+The third round of features (§3b) was built on 25 September.
 
 ---
 
@@ -176,6 +162,43 @@ provider is chosen.
 
 ---
 
+## 3b. Third pass: pre-launch features (25 September, evening)
+
+You asked what else was worth building before deploying, then: "Implement
+all of them. Properly production/industrial/professional grade level."
+
+Some of the list already existed and was **not rebuilt**: 2FA recovery codes,
+new-device sign-in alerts, offline logging with a sync queue, streak
+milestones, a 4-week consistency score, the app-icon badge, the rest timer and
+"last time" hints. Where they had gaps, the gaps were closed.
+
+| Feature | What was built | Key decisions |
+| --- | --- | --- |
+| Passkeys | WebAuthn registration and usernameless sign-in (button and email-field autofill), rename/remove, security events | py_webauthn, a library, not a service. RP id = `app.pacestreak.com`, not the apex, so no other subdomain can ask for the credential. Challenges in Postgres, single use. Password required to add or remove. A passkey sign-in satisfies 2FA. |
+| Recovery codes | "New recovery codes" in Settings, low-count warning | The API supported it; the UI never exposed it. |
+| Health | `/health` (liveness), `/health/ready`, `/health/worker`; worker heartbeat in Postgres; per-job results on the admin Metrics tab | Heartbeat in Postgres, not Redis (Redis is best-effort). Public endpoints show a verdict only, never job names or errors. |
+| Monthly backup | Opt-in reminder on the 1st, 09:00 local; opens a one-tap download in the app | **No data and no token in the email or inbox.** The download still needs a signed-in session. |
+| Balanced weeks | Chain requirements ("at least 2 runs and 1 strength day") | History like targets, so old weeks are never re-judged. A week's score is its weakest part. |
+| Consistency | 12- and 52-week windows next to the 4-week one | The number that survives a broken streak. |
+| Year in review, record history | `/review`, a timeline per personal record | Attendance only, never volume. |
+| Travel mode | `travel` pause reason; Today offers to follow the phone's timezone or pause | Logged sessions keep their dates. Offered once per place. |
+| Icon badge | Unread, days still to go this week, or off | Hidden while paused. |
+| Training plans | 4 conservative templates, custom plans, week editor, Today card | Plans never change what the streak counts; completion is read from the log; a session moved within the week still counts. One plan at a time. The terms now say they are general suggestions. |
+| Interval timer | Intervals, EMOM, Tabata | Position computed from the clock, so a locked phone comes back correct. Wake lock while running. |
+| Progression hints | Now also for bodyweight reps and timed holds | Past the top of the range it suggests a harder variation, not a longer set. |
+| Tags and search | Private tags; search over notes, titles, exercises and #tags | Search is on-device, so it works offline. |
+| Gear | Shoes/bikes/other, replacement distance, per-discipline default | Mileage is summed from the log, never stored. |
+| Buddy streaks | Invite, accept, shared streak, side-by-side progress | Only with an accepted follow either way. A buddy sees progress and "paused", never sessions or reasons. Blocking ends it. Ending notifies nobody. |
+| Group streaks | Shared group streak, threshold 50-100% set by owner/admin | Same judgement for every viewer. |
+| Encouragement | 6 preset messages | No free text, so nothing to moderate. Only to people who follow you, buddies or group mates, once a day each. |
+| i18n | All signed-out screens and API errors through the catalog; `rich()` for sentences with links; guard test | The remaining ~900 in-app strings are migrated as screens are touched. There is no second language yet. |
+| Accessibility | Automated control-labelling pass; contrast measured for every text token on every surface in both themes | One unlabeled link fixed; three light-theme colours lifted to AA. |
+| Web | `/changelog`; features, security, privacy and terms updated | The changelog says plainly that nothing is live yet. |
+
+Also: export version 2 carries tags, gear, plans, chain requirements and
+buddies. `make recompute-all` backfills `user_stats.recent_weeks` after
+deploying, and should be run once on first deploy.
+
 ## 4. What's left
 
 ### Needs your decision
@@ -237,6 +260,10 @@ Kept here so the next session doesn't ask again, and doesn't treat a
 | Remaining list | "Implement them all, production grade" | The whole of §3. |
 | This push | "Push all to GitHub on main, update all md files and the handoff" | This section, §6, and the push, including `web`'s legal pages. |
 | During that work | `/compact` typed mid-turn | It's a command you run yourself; it couldn't be run from inside the turn. |
+| After that | "What can we do about deployment now? And mails?" | Recommended: app on Cloudflare Pages (with the API, not before); API on one small VPS with `compose.prod.yaml` behind a **Cloudflare Tunnel** (no open ports, free). Hosts offered: **Oracle Cloud Always Free** (free, fiddly sign-up), **Hetzner CX22** (~€4/month, recommended), DigitalOcean/Linode (~$6). Mail: Zoho's free plan can't send SMTP; offered **Zoho ZeptoMail** (recommended: Zoho is already on `/privacy`), Amazon SES (cheapest, sandbox approval), Resend/Brevo free tiers (one more vendor). **No answer yet: both still open.** |
+| After that | "What about IONOS servers?" | Fine for this stack. Pick the **VPS** product (not Cloud Server or web hosting), the **4 GB** tier, an EU data centre, and check the minimum term and renewal price. Hetzner is still slightly easier (monthly, no commitment). **Still open.** |
+| After that | "How does this project use the scheduler and worker?" | Explained `app/worker.py`: one process, six jobs per tick, a Redis lock, dedupe keys, `--once` for cron. |
+| After that | "Before we deploy, what features can we implement?" then "Implement all of them" | §3b. |
 
 ### Standing rules that shaped the answers (from `CLAUDE.md`)
 
@@ -263,7 +290,10 @@ In order. Nothing below needs code, only your decisions and accounts.
      and a Fernet key for `TOTP_ENCRYPTION_KEY`;
    - fill `.env` (mode 0600) and run `make prod-config` until it's clean;
    - `make prod-up`, behind a TLS proxy forwarding to `127.0.0.1:8000`;
+   - run `make recompute-all` once (backfills buddy and group streak data);
    - attach `api.pacestreak.com` via that host (not a hand-made DNS record).
+   - Passkeys are bound to `app.pacestreak.com`. Don't set `WEBAUTHN_RP_ID`
+     to anything else, and never change it after launch.
 4. [ ] **Decide the email provider** (question 2 above). Set `SMTP_*` and add
    SPF, DKIM and DMARC DNS records for `pacestreak.com`.
 5. [ ] **Name both providers** on `/privacy` (the "Service providers"
@@ -272,9 +302,12 @@ In order. Nothing below needs code, only your decisions and accounts.
    attach `app.pacestreak.com` as a custom domain.
 7. [ ] **Schedule backups**: a daily `make backup` via cron or a systemd timer,
    with `./backups` copied off the host.
-8. [ ] **Add monitors** for `api.pacestreak.com/health` and `app.pacestreak.com`
+8. [ ] **Add monitors** for `api.pacestreak.com/health/ready`,
+   `api.pacestreak.com/health/worker` and `app.pacestreak.com`
    in `status/.upptimerc.yml`, only once they respond.
 9. [ ] **Purge the Cloudflare cache** for `www` (Caching → Purge; five stale
    files).
-10. [ ] Optionally, give the brand an official account: create it, then
+10. [ ] After launch, flip `released` to `true` in
+    `web/src/data/changelog.ts` so the changelog stops saying "not live".
+11. [ ] Optionally, give the brand an official account: create it, then
     **Admin → People → Make official**, with handle `pacestreak`.

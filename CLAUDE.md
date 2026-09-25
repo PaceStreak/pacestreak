@@ -8,7 +8,7 @@ below were tried and rejected for a stated reason.
 **PaceStreak** is a workout streak tracker. Log the session, keep the streak,
 watch the grid fill. Nothing is launched. There is a public site, a blog and a
 status page (all live), plus a **built but undeployed** product: `api`
-(FastAPI, ~110 routes, 87 tests) and `app` (React PWA). `HANDOFF.md` in this
+(FastAPI, ~160 routes, 134 tests) and `app` (React PWA). `HANDOFF.md` in this
 folder is the latest detailed handoff: every recent decision, and what's left.
 
 Owner: AlzyWelzy (`welzyalzy@gmail.com`). GitHub org: `PaceStreak`.
