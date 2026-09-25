@@ -1,0 +1,28 @@
+[submodule "web"]
+	path = web
+	url = git@github.com:PaceStreak/web.git
+	branch = main
+[submodule "blog"]
+	path = blog
+	url = git@github.com:PaceStreak/blog.git
+	branch = main
+[submodule "status"]
+	path = status
+	url = git@github.com:PaceStreak/status.git
+	branch = master
+[submodule "app"]
+	path = app
+	url = git@github.com:PaceStreak/app.git
+	branch = main
+[submodule "api"]
+	path = api
+	url = git@github.com:PaceStreak/api.git
+	branch = main
+[submodule "infra"]
+	path = infra
+	url = git@github.com:PaceStreak/infra.git
+	branch = main
+[submodule ".github"]
+	path = .github
+	url = git@github.com:PaceStreak/.github.git
+	branch = main
