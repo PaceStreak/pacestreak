@@ -19,6 +19,12 @@ Owner: AlzyWelzy (`welzyalzy@gmail.com`). GitHub org: `PaceStreak`.
 
 Local folder names match GitHub repo names exactly.
 
+**The root folder is itself a repo**, `PaceStreak/pacestreak` (private), and
+every component below is a **git submodule** of it. It holds only `CLAUDE.md`,
+`HANDOFF.md` and `README.md`. Committing inside a component doesn't move the
+root's pin: run `git add <component>` at the root and commit to record it.
+Clone everything with `git clone --recurse-submodules`.
+
 | Folder | GitHub | Branch | Visibility | Licence | State |
 | --- | --- | --- | --- | --- | --- |
 | `web/` | `PaceStreak/web` | `main` | private | AGPL-3.0 | **Live** at `www.pacestreak.com` |
