@@ -10,13 +10,13 @@ in the latest sessions, why each decision was made, and what is left.
 
 The public site, blog and status page are live. The product is **built and
 tested but not deployed**: the API (FastAPI, Postgres, Redis and a worker) has
-about 180 routes and 167 passing tests; the app is a React 19 PWA with 72
+about 200 routes and 180 passing tests; the app is a React 19 PWA with 88
 unit tests, and every new screen was also driven end to end in a real browser. Everything is on `main` in every repo, and the root repo pins each
 component. **Pushing `main` in `web` or `blog` deploys it** (Cloudflare Pages is
 Git-connected). What blocks launch is two decisions only you can make, where
 the API runs and which email provider sends mail, plus the checklist in §6.
 The third and fourth rounds of features (§3b, §3c) were built on 25 September;
-weigh-ins and weight trends (§3d) on 26 September.
+weigh-ins and weight trends (§3d) and the fifth round (§3e) on 26 September.
 
 ---
 
@@ -255,6 +255,48 @@ on a stall; soreness and pump check-ins; offline queueing for body entries;
 consistency-only quests (e.g. five morning weigh-ins in a row), PR streaks
 per four-week block, and a monthly strength recap.
 
+## 3e. Fifth pass: the researched list (26 September)
+
+You asked for research into what the industry offers and what people want,
+then "Add them all". Research sources were Hevy, Strong, Fitbod, Alpha
+Progression, MacroFactor Workouts, Happy Scale, Libra, and writing on
+streak design ("streak creep"). Four ideas were excluded by standing rules:
+AI form checks and camera rep counting (a hosted model or third party),
+wearable/Strava/Health sync (third-party sync; a PWA can't reach HealthKit),
+watch apps and widgets (native only), and weight-based rewards (your call in §3d).
+
+Two things I had told you wrongly: quests did **not** already exist (my search
+matched "request"), and sets per muscle with a 10-20 band **did**.
+
+| Feature | Where | Key decisions |
+| --- | --- | --- |
+| Stall resets | `app/src/lib/training.ts` `suggestNext` | Same top weight three sessions without a rep gained, or twice under the range floor: suggest -10%. Shown in orange. |
+| Auto-fill | Setting, off by default | Ticking an empty set logs the suggestion instead of last time. |
+| Stall card | `coach.ts` `stalledLift` | Four sessions over 14+ days, none beating the first by 1%: a lighter week on that lift only. |
+| "What showing up did" | `coach.ts` `consistencyGain` | Streak of 4+ weeks and the most-trained lift up 2%+. |
+| Recovery map, untrained muscles | Progress | Days since primary work, sets this week. Says plainly it isn't a recovery measure. |
+| Strength standards | Records, opt-in | Men's/women's bodyweight-multiple tables for squat, bench, deadlift, OHP. Off until chosen; private. |
+| Search | Exercise picker | One typo forgiven per word of 4+ letters; recents rank first; "At <gym>" filter. |
+| Gyms | New `gyms` table, `workouts.gym_id`, Settings > Gyms | Equipment, plates, bar; first gym is default; plate calculator uses its plates. |
+| Pinned notes | `exercise_notes` | On the live workout and exercise pages. |
+| Offline body writes | IndexedDB v2 `requests` store | Only idempotent PUT/DELETE queue; 4xx is dropped, not retried. Flushed on every sync. |
+| Typed sets | `parseShorthand` | 100x5, 100x5x3, 3x5@100, 5@100, 12. |
+| Weight goal | `weight_goals` | Starts from the 7-day mean; milestones; projection from 4 weeks' regression. **No rewards.** |
+| Progress photos | IndexedDB `photos` store | Never uploaded (nothing untrusted under pacestreak.com). Re-encoded, which strips EXIF location. Lost with browser data; the UI says so. |
+| Weekly quests | `api/app/game/quests.py` | 3 a week from 7, same for everyone, 15 XP each, recomputed from history. Paused weeks offer none. Weigh-in quest only once you've weighed in before that week. Hidden when gamification is off. |
+| PR streak | Same module; badge "Always improving" (3/6/13) | Four-week blocks anchored to 2024-01-01; the open block never breaks it. |
+| Monthly recap | `/me/recap/month`, `/recap/month` | Best e1RM this month vs before it. No volume. |
+| Streak wager | `streak_wagers`; `compute_chain(wagers=...)` | Target+1 days; kept earns a freeze within the cap; missed costs nothing. One a calendar month, placed before the week's first session. Main chain only. Exported, **not imported**. |
+| Similar boards | `user_stats.weekly_days_4w`, `scope=similar` | Opted-in people within one day a week of your 4-week average. |
+
+Also fixed: the XP screen recomputed XP separately and would have omitted
+quest XP; it now reads `snapshot().xp_items`. The website had claimed 23
+achievements while the code had 25; both pages now read `facts`.
+
+Migration `0f73caa084e4` round-trips and `alembic check` is clean. Export v3
+carries gyms, notes, goal and wagers. Screens were checked in headless
+Chromium on a throwaway account, deleted afterwards.
+
 ## 4. What's left
 
 ### Needs your decision
@@ -300,6 +342,7 @@ Kept here so the next session doesn't ask again, and doesn't treat a
 | 3 | Build the real waitlist signup on www (Pages Function + KV)? It would be the first network request `web` ever makes. | **Skip it (recommended)**: keep `mailto:` until launch, when "Sign up" replaces it. **Build it**: Pages Function + KV, double opt-in, rate limited. | **Skip it** | Audit item 10 is closed as won't-do. `web` still makes no network requests. |
 | 4 | Most of the request already existed; the gap was body weight (one per day, no moments, no % change). How to proceed? | **Build weigh-ins + write research (recommended)**. **Research doc only first**. **Build everything proposed**. | **Build weigh-ins + write research** | §3d. The research list is waiting for you to choose. |
 | 5 | Should weight tracking stay outside gamification? | **Keep it private (recommended)**: reward logging, never the number. **Allow weight-goal badges**, still never public. | **Keep it private** | Standing rule reaffirmed: no weight-based XP, badges or goals rewards. |
+| 6 | (In conversation) "Add them all" after the researched list | The ranked list of 18 in §3e | **All of them** | §3e. Excluded items stay excluded by standing rules. |
 
 ### Choices you made in conversation
 
