@@ -10,12 +10,13 @@ in the latest sessions, why each decision was made, and what is left.
 
 The public site, blog and status page are live. The product is **built and
 tested but not deployed**: the API (FastAPI, Postgres, Redis and a worker) has
-about 180 routes and 162 passing tests; the app is a React 19 PWA with 63
+about 180 routes and 167 passing tests; the app is a React 19 PWA with 72
 unit tests, and every new screen was also driven end to end in a real browser. Everything is on `main` in every repo, and the root repo pins each
 component. **Pushing `main` in `web` or `blog` deploys it** (Cloudflare Pages is
 Git-connected). What blocks launch is two decisions only you can make, where
 the API runs and which email provider sends mail, plus the checklist in §6.
-The third and fourth rounds of features (§3b, §3c) were built on 25 September.
+The third and fourth rounds of features (§3b, §3c) were built on 25 September;
+weigh-ins and weight trends (§3d) on 26 September.
 
 ---
 
@@ -231,6 +232,29 @@ production build fresh); a false "Travelling?" card for timezone aliases;
 switch; a flaky sync test (passed 25 stress runs after the fix); the www
 header button wrapping at 360px. The dev database has no test accounts left.
 
+## 3d. Weigh-ins and trends (26 September)
+
+You asked for weight tracked several times a day (after waking, before and
+after training, before bed), sets/PRs with progression graphs and % change,
+gamification, and research into requested features. Sets, PRs with % gain,
+record history, e1RM charts and XP already existed; the gap was body weight.
+
+| Feature | What was built | Key decisions |
+| --- | --- | --- |
+| Weigh-ins | New `weigh_ins` table: many per day, `moment` = waking / pre_workout / post_workout / bedtime / other. `PUT /v1/weigh-ins/{id}` (client id, so retries update), `GET`, `DELETE`. Backdate up to 30 days. | Weight swings a kilo or more within a day, so readings are only comparable within one moment. |
+| One place for weight | Migration `02c71d3228fb` moves `body_metrics.weight_kg` to weigh-ins at local midday, moment `other`, and **drops the column**. | Safe because nothing is launched. Downgrade restores each day's mean. |
+| Trend | Body screen: daily dots, 7-day average line (new `LineChart`, Chart/Table toggle), filter by moment, 7/30/90-day change in unit and %. | Changes compare averages; "Not enough history" instead of a false figure. Gain/loss is not coloured good or bad. |
+| Exercises | % change in e1RM, top set and volume across the charted sessions. | |
+| Export | Version 3 adds `weigh_ins` (JSON and `weigh_ins.csv`); v1/v2 daily weights import as weigh-ins. Imports dedupe. | |
+| Privacy | Weight stays out of XP, badges, boards and other people. **Your choice this round.** The "Measured" badge counts distinct logged days across both tables. | Rewarding the number pushes people to cut. |
+
+Research-backed ideas offered, not yet built, in ranked order: trend
+projection and milestone goals (as Happy Scale and Libra do); private progress
+photos; weekly hard sets per muscle against a target range; deload suggestions
+on a stall; soreness and pump check-ins; offline queueing for body entries;
+consistency-only quests (e.g. five morning weigh-ins in a row), PR streaks
+per four-week block, and a monthly strength recap.
+
 ## 4. What's left
 
 ### Needs your decision
@@ -274,6 +298,8 @@ Kept here so the next session doesn't ask again, and doesn't treat a
 | 1 | Where should the API (FastAPI + Postgres + Redis + worker) run in production? | **Small VPS (recommended)**: about €5 a month (e.g. Hetzner or DigitalOcean); a production compose stack with Caddy, backups and a deploy script. **Container platform**: Fly.io, Railway or Render; less ops, more cost, one more vendor. **Decide later**: build everything host-agnostic and leave deploy unwired. | **Decide later** | `api/compose.prod.yaml` runs on any Docker host behind any TLS proxy. Nothing is tied to a vendor. **Still open; it blocks launch.** |
 | 2 | Which email sender for verification and password-reset mail? | **Generic SMTP (recommended)**: harden the existing SMTP backend; works with Zoho, which already handles `hello@`, or any provider. **Cloudflare Email**: stays within the Cloudflare-only rule, but its sending API is newer, so it would need a new HTTP backend. **Decide later**: leave `console`; make SMTP production-ready but unconfigured. | **Decide later** | SMTP is hardened and provider-neutral; picking one is configuration only. Production refuses to start on `console`. **Still open; it blocks launch.** |
 | 3 | Build the real waitlist signup on www (Pages Function + KV)? It would be the first network request `web` ever makes. | **Skip it (recommended)**: keep `mailto:` until launch, when "Sign up" replaces it. **Build it**: Pages Function + KV, double opt-in, rate limited. | **Skip it** | Audit item 10 is closed as won't-do. `web` still makes no network requests. |
+| 4 | Most of the request already existed; the gap was body weight (one per day, no moments, no % change). How to proceed? | **Build weigh-ins + write research (recommended)**. **Research doc only first**. **Build everything proposed**. | **Build weigh-ins + write research** | §3d. The research list is waiting for you to choose. |
+| 5 | Should weight tracking stay outside gamification? | **Keep it private (recommended)**: reward logging, never the number. **Allow weight-goal badges**, still never public. | **Keep it private** | Standing rule reaffirmed: no weight-based XP, badges or goals rewards. |
 
 ### Choices you made in conversation
 
