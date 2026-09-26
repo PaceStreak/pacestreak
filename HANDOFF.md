@@ -10,13 +10,13 @@ in the latest sessions, why each decision was made, and what is left.
 
 The public site, blog and status page are live. The product is **built and
 tested but not deployed**: the API (FastAPI, Postgres, Redis and a worker) has
-about 200 routes and 180 passing tests; the app is a React 19 PWA with 88
+about 210 routes and 188 passing tests; the app is a React 19 PWA with 98
 unit tests, and every new screen was also driven end to end in a real browser. Everything is on `main` in every repo, and the root repo pins each
 component. **Pushing `main` in `web` or `blog` deploys it** (Cloudflare Pages is
 Git-connected). What blocks launch is two decisions only you can make, where
 the API runs and which email provider sends mail, plus the checklist in §6.
 The third and fourth rounds of features (§3b, §3c) were built on 25 September;
-weigh-ins and weight trends (§3d) and the fifth round (§3e) on 26 September.
+weigh-ins and weight trends (§3d) the fifth round (§3e) and the sixth (§3f) on 26 September.
 
 ---
 
@@ -297,6 +297,28 @@ Migration `0f73caa084e4` round-trips and `alembic check` is clean. Export v3
 carries gyms, notes, goal and wagers. Screens were checked in headless
 Chromium on a throwaway account, deleted afterwards.
 
+## 3f. Sixth pass: programming depth, hybrid training, reach (26 September)
+
+Researched again (Runna, RP Hypertrophy, Edge/Hypla, retention studies), then
+"Implement them all".
+
+| Feature | Where | Key decisions |
+| --- | --- | --- |
+| Race plans | `api/app/training/race.py`, `POST /plans/race` | Pure builder. Long run +10%/week, every 4th week 80%, and it holds before a lighter week so the week after returns to the same level (a bug found and fixed in testing). Taper 1-2 weeks, then a recovery week. Refuses build-ups shorter than 4/5/8/12 weeks; starts later rather than exceed 25 weeks. |
+| Training blocks | `training_blocks`, `/blocks` | RIR 3 to 1 across working weeks, last week lighter (RIR 4, sets halved). Feeds `targetRpe = 10 - RIR` when a routine sets none. One at a time. Not imported. |
+| Soreness/pump check-in | `workouts.soreness`, `pump` | Optional; two agreeing check-ins suggest a set more or fewer. |
+| Adjust today | `AdjustToday.tsx` | Lighter / hot / unwell / short / another routine / rest. All still complete the plan day; sessions get a tag. Merges "not feeling 100%" and the heat/illness toggle. Weather data would need a third party, so it's manual. |
+| Readiness | `readiness` table | Sleep, energy, soreness 1-5; low score offers Adjust today. Today or the last two days only. |
+| Conflicts, training load | `app/src/lib/load.ts` | Load = minutes x effort (5 if unrated). Spike > 1.5x the 4-week average. |
+| Heart rate | Importers, `workouts.avg_hr/max_hr/hr_zones`, `profiles.max_hr` | Zones at 50/60/70/80/90% of max; gaps count at most 30 s. |
+| First fortnight | Getting started | Shown only while achievable. |
+| Reflections | `week_reflections` | On the recap, searchable. |
+| Share images | `app/src/lib/shareImage.ts` | Canvas on device, share sheet or download. Attendance only. |
+| Languages | `app/src/lib/locales/{es,de}.ts` | Only the catalogued screens (auth, navigation, errors) are translated; the rest is English and the setting says so. **Needs native-speaker review.** A test keeps placeholders and link tags identical. |
+
+Also fixed: the sign-in page showed "Something went wrong" on load when the
+background passkey autofill request failed; it now fails quietly.
+
 ## 4. What's left
 
 ### Needs your decision
@@ -306,6 +328,8 @@ Chromium on a throwaway account, deleted afterwards.
 2. **Email provider.** Set `SMTP_*`, then add SPF, DKIM and DMARC for the
    sending domain.
 3. **Change the dev admin password:** `make set-password email=admin@pacestreak.com`.
+4. **Review the Spanish and German translations** with a native speaker before
+   launch (`app/src/lib/locales/`). Most in-app screens aren't in the catalog yet.
 
 ### Blocked on deployment
 
