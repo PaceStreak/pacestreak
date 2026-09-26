@@ -5,10 +5,11 @@ Handoff notes for a Claude Code session started anywhere under
 a trap already hit. Read it before proposing changes; most of the obvious ideas
 below were tried and rejected for a stated reason.
 
-**PaceStreak** is a workout streak tracker. Log the session, keep the streak,
-watch the grid fill. Nothing is launched. There is a public site, a blog and a
+**PaceStreak** is a habit and streak tracker: training, and anything else worth
+doing regularly (learning, health, mind, habits being broken). Keep each one
+weekly, watch the grid fill. Nothing is launched. There is a public site, a blog and a
 status page (all live), plus a **built but undeployed** product: `api`
-(FastAPI, ~210 routes, 188 tests) and `app` (React PWA). `HANDOFF.md` in this
+(FastAPI, ~215 routes, 200 tests) and `app` (React PWA). `HANDOFF.md` in this
 folder is the latest detailed handoff: every recent decision, and what's left.
 
 Owner: AlzyWelzy (`welzyalzy@gmail.com`). GitHub org: `PaceStreak`.
@@ -132,6 +133,13 @@ A proxied Cloudflare record with nothing behind it returns **522**, which reads
 to a visitor as a broken product — strictly worse than not resolving. Create the
 record by attaching a custom domain to a real deployment, never by hand in the
 DNS tab. This is why `app` and `api` have no records.
+
+### Habits are never shown to anyone else
+
+A habit's name, amounts and slips never reach a feed, a profile, a group or a
+leaderboard; badges are named generically. Someone breaking a smoking or
+drinking habit must never be outed by the product. Leaderboards may rank
+attendance (the whole-life streak), never which habit or how much.
 
 ### No pricing claims
 

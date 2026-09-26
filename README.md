@@ -1,6 +1,6 @@
 # PaceStreak (workspace)
 
-The umbrella repository for [PaceStreak](https://www.pacestreak.com), a workout
+The umbrella repository for [PaceStreak](https://www.pacestreak.com), a habit and
 streak tracker. It holds no product code of its own: each component is its own
 repository, pinned here as a git submodule, and this repo carries the shared
 working notes.

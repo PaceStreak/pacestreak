@@ -10,13 +10,14 @@ in the latest sessions, why each decision was made, and what is left.
 
 The public site, blog and status page are live. The product is **built and
 tested but not deployed**: the API (FastAPI, Postgres, Redis and a worker) has
-about 210 routes and 188 passing tests; the app is a React 19 PWA with 98
+about 215 routes and 200 passing tests; the app is a React 19 PWA with 99
 unit tests, and every new screen was also driven end to end in a real browser. Everything is on `main` in every repo, and the root repo pins each
 component. **Pushing `main` in `web` or `blog` deploys it** (Cloudflare Pages is
 Git-connected). What blocks launch is two decisions only you can make, where
 the API runs and which email provider sends mail, plus the checklist in §6.
 The third and fourth rounds of features (§3b, §3c) were built on 25 September;
-weigh-ins and weight trends (§3d) the fifth round (§3e) and the sixth (§3f) on 26 September.
+weigh-ins and weight trends (§3d) the fifth (§3e), the sixth (§3f) and habits (§3g) on 26 September.
+PaceStreak is now positioned as a habit and streak tracker, not only for training.
 
 ---
 
@@ -319,6 +320,30 @@ Researched again (Runna, RP Hypertrophy, Edge/Hypla, retention studies), then
 Also fixed: the sign-in page showed "Something went wrong" on load when the
 background passkey autofill request failed; it now fails quietly.
 
+## 3g. Beyond training: habits (26 September)
+
+You asked to go beyond gyms: healthy lifestyle, learning skills and more.
+Researched (Streaks, Habitify, Loop, Finch, Fabulous; reviews of habit apps;
+Lally's habit-formation study; implementation intentions). Your answers are
+in §5 (questions 8-11).
+
+| Area | Where | Key decisions |
+| --- | --- | --- |
+| Habits | `api/app/habits/` (models, catalog, engine, service, router) | Kinds: check, duration, count, quit. Each has its own week-based streak via the existing `compute_chain`, so freezes, repairs and pauses mean the same everywhere. |
+| Catalogue | `habits/catalog.py` | 68 templates in 10 areas plus "break". No calorie, fasting or diet templates (a test enforces it). Compact table with `# fmt: off` and a per-file E501 ignore. |
+| Strength | `habits/engine.py` | Average over weeks of the share of target met (alpha 0.25); the open week only counts once met. A first daily-rolling version wrongly punished the start of every week and was replaced. |
+| Quit habits | Same | Clean unless a slip is logged; `weekly_target` = clean days that keep the week. Pay XP only for kept weeks. Never remind. |
+| Backfill | Router | Any day in the last 60 can be set or cleared (the top complaint about habit apps). Absolute PUTs, so offline retries are safe. |
+| Whole-life streak | `profiles.life_target`, `user_stats.life_streak`, board `life_streak` | Training days plus non-quit habit days. Optional. |
+| Gamification | `game/xp.py` `habit_xp`, 4 badges, quest `habit_week` | 5 XP per habit-day up to its weekly target, 20 a day at most; 10 per kept habit week. Badges are named generically (profiles are public). |
+| Reminders | `worker.habit_reminders`, category `habits` | At the chosen hour, only if not done, not paused; push on by default because the person chose the hour. |
+| Privacy | Everywhere | **Habits never reach any social surface.** Recorded as a load-bearing constraint in `CLAUDE.md`. |
+| App | `Habits`, `HabitDetail`, `HabitsToday`, `HabitRow`, `HabitForm` | Today shows habits for the part of the day first. Projected dates show the year when far off (a bug found in testing). |
+| Site | `web`, `blog` | Repositioned as "Habits and streaks": home, features (new Habits group), FAQ, about, privacy, changelog, blog tagline. Counts corrected: 29 achievements, 5 leaderboards. |
+
+Not built: habits in the social feed (you chose full gamification, which is
+XP, badges and boards; sharing a habit would conflict with the privacy rule).
+
 ## 4. What's left
 
 ### Needs your decision
@@ -366,6 +391,10 @@ Kept here so the next session doesn't ask again, and doesn't treat a
 | 5 | Should weight tracking stay outside gamification? | **Keep it private (recommended)**: reward logging, never the number. **Allow weight-goal badges**, still never public. | **Keep it private** | Standing rule reaffirmed: no weight-based XP, badges or goals rewards. |
 | 6 | (In conversation) "Add them all" after the researched list | The ranked list of 18 in §3e | **All of them** | §3e. Excluded items stay excluded by standing rules. |
 | 7 | (In conversation) "Do we really need translation in German and Spanish?" | Keep them, or remove them and add a language once real users need one | **Remove them** | Catalogs, the language setting and the site's language claims removed. English only until a language is chosen from real users. |
+| 8 | When you log a habit, what should it count toward? | **Its own streak (recommended)**; one streak for everything; both | **Both** | Per-habit streaks plus an optional whole-life streak. |
+| 9 | How should the website present this? | **Training first, plus habits (recommended)**; reposition as a habit app; don't change the site yet | **Reposition as a habit app** | Home, features, FAQ, about and blog tagline rewritten. |
+| 10 | Which kinds of habits? | Health & wellbeing; learning & skills; mind & reflection; breaking habits | **All four, "and a lot more"** | 68 templates across 10 areas plus breaking. |
+| 11 | Should habits earn XP, badges or appear on leaderboards? | **XP only, private (recommended)**; full gamification; no rewards | **Full gamification** | XP (capped), badges (generic names), quests, and a whole-life streak board. Habits themselves stay private. |
 
 ### Choices you made in conversation
 
