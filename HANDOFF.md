@@ -314,7 +314,7 @@ Researched again (Runna, RP Hypertrophy, Edge/Hypla, retention studies), then
 | First fortnight | Getting started | Shown only while achievable. |
 | Reflections | `week_reflections` | On the recap, searchable. |
 | Share images | `app/src/lib/shareImage.ts` | Canvas on device, share sheet or download. Attendance only. |
-| Languages | `app/src/lib/locales/{es,de}.ts` | Only the catalogued screens (auth, navigation, errors) are translated; the rest is English and the setting says so. **Needs native-speaker review.** A test keeps placeholders and link tags identical. |
+| Languages | **Built, then removed at your request** | Spanish and German covered only sign-in and navigation, were unreviewed, and would have switched automatically to a half-English app. The catalog layer and a test that checks any future catalog's placeholders and tags remain; adding a language is still a data change. |
 
 Also fixed: the sign-in page showed "Something went wrong" on load when the
 background passkey autofill request failed; it now fails quietly.
@@ -328,8 +328,6 @@ background passkey autofill request failed; it now fails quietly.
 2. **Email provider.** Set `SMTP_*`, then add SPF, DKIM and DMARC for the
    sending domain.
 3. **Change the dev admin password:** `make set-password email=admin@pacestreak.com`.
-4. **Review the Spanish and German translations** with a native speaker before
-   launch (`app/src/lib/locales/`). Most in-app screens aren't in the catalog yet.
 
 ### Blocked on deployment
 
@@ -367,6 +365,7 @@ Kept here so the next session doesn't ask again, and doesn't treat a
 | 4 | Most of the request already existed; the gap was body weight (one per day, no moments, no % change). How to proceed? | **Build weigh-ins + write research (recommended)**. **Research doc only first**. **Build everything proposed**. | **Build weigh-ins + write research** | §3d. The research list is waiting for you to choose. |
 | 5 | Should weight tracking stay outside gamification? | **Keep it private (recommended)**: reward logging, never the number. **Allow weight-goal badges**, still never public. | **Keep it private** | Standing rule reaffirmed: no weight-based XP, badges or goals rewards. |
 | 6 | (In conversation) "Add them all" after the researched list | The ranked list of 18 in §3e | **All of them** | §3e. Excluded items stay excluded by standing rules. |
+| 7 | (In conversation) "Do we really need translation in German and Spanish?" | Keep them, or remove them and add a language once real users need one | **Remove them** | Catalogs, the language setting and the site's language claims removed. English only until a language is chosen from real users. |
 
 ### Choices you made in conversation
 
