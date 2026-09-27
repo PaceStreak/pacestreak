@@ -91,7 +91,9 @@ The palette is near-black with **lime `#d3ff3e`** as the action colour and
 "wall calendar" palette was tried on 2026-09-27 and **rejected by the user as
 "meh and edgy"**; do not bring it back. What stayed from that redesign is the
 structure: the Today week board, the two-stroke marker X as the only "done"
-mark, the tear-off date block, the calendar-page logo and self-hosted Archivo.
+mark, the tear-off date block and self-hosted Archivo. The logo is the original
+lime bolt; the calendar-page-with-an-X mark was dropped (an X in a corner reads
+as "close").
 Social images come from `web/scripts/social-images.py`.
 
 ## Load-bearing constraints
@@ -256,7 +258,7 @@ means still open, not declined. The user's checklist is `HANDOFF.md` §6.
 Done since the audit: items 5–9 (per-post OG images, JSON-LD, prev/next,
 tags, privacy/terms). Item 10, the waitlist, was **skipped by the user**.
 
-The blog has **twenty-eight posts**.
+The blog has **forty-four posts**.
 
 ### Operations quick reference
 
