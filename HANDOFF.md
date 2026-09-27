@@ -27,7 +27,7 @@ PaceStreak is now positioned as a habit and streak tracker, not only for trainin
 
 | Decision | Why |
 | --- | --- |
-| Explained that verification is a **single-use link**, not a numeric OTP | `EMAIL_BACKEND=console` prints the link to the API log. TOTP codes are the only numeric codes in the system. |
+| ~~Explained that verification is a **single-use link**, not a numeric OTP~~ **Superseded 2026-09-27**: verification, password reset and email change now email a 6-digit code, not a link. | `EMAIL_BACKEND=console` prints it to the API log either way. |
 | Frontend on :5173 → API in Docker on :8000; stopped a stray API on :8001 | Two APIs against one database only cause confusion. |
 | `chmod 644` on `api/keys/*.pem` | **Dev-only.** The container runs as uid 1001 and the files are owned by uid 1000. In production, fix ownership or inject secrets instead. |
 | Created `admin@pacestreak.com` with a direct DB script, a temporary password (not stored in git) | Signup can't create an admin, and email verification can't complete without SMTP. **Rotate the password.** A `make create-admin` target is still worth adding. |
@@ -409,7 +409,7 @@ Kept here so the next session doesn't ask again, and doesn't treat a
 
 | When | What you said | What was done |
 | --- | --- | --- |
-| Setting up locally | Asked how email verification ("OTP") works and how to log in | Explained that verification is a single-use **link**; with `console` email it prints to the API log. TOTP is the only numeric code. |
+| Setting up locally | Asked how email verification ("OTP") works and how to log in | At the time, explained that verification was a single-use link, not an OTP. **Since changed (2026-09-27)**: verification, password reset and email change are now genuinely OTP - a 6-digit code, emailed and typed back, not a link. With `console` email it prints to the API log either way. |
 | Setting up locally | "Create an admin account with email admin@pacestreak.com" | Created, with a temporary password (not stored in git). Now also possible with `make create-admin`. |
 | Setting up locally | "with port 8000 for backend api" / "my docker containers are running" | Standardised on the Docker API on :8000 and stopped a stray API on :8001. |
 | Setting up locally | Hit "password must be at least 16 characters" | Kept the 16-character minimum and used a longer password. |
