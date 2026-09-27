@@ -346,22 +346,31 @@ XP, badges and boards; sharing a habit would conflict with the privacy rule).
 
 ## 4. What's left
 
+**API hosting: decided and live, 27 September 2026.** GCP `e2-micro` (free
+tier, `us-central1`), Neon Postgres, Upstash Redis, GHCR image distribution,
+single-node Docker Swarm for zero-downtime CI-triggered deploys, Cloudflare
+Tunnel for ingress (no open port). `api.pacestreak.com` resolves and answers -
+see `infra/DECISIONS.md`. Email was already decided earlier (Brevo).
+
 ### Needs your decision
 
-1. **Where the API runs.** The stack is ready to go on any Docker host. Once
-   you choose, fill `.env`, run `make prod-up`, and put a TLS proxy in front.
-2. **Email provider.** Set `SMTP_*`, then add SPF, DKIM and DMARC for the
-   sending domain.
-3. **Change the dev admin password:** `make set-password email=admin@pacestreak.com`.
+1. **Change the dev admin password:** `make set-password email=admin@pacestreak.com`.
 
 ### Blocked on deployment
 
-- Attach `app.pacestreak.com` and `api.pacestreak.com` as custom domains to
-  real deployments (never hand-made DNS records).
+- Attach `app.pacestreak.com` as a custom domain to a real deployment (never
+  hand-made DNS records) - `api.pacestreak.com` is done, `app` is what's left.
 - Then add both hosts to Upptime. Adding them before they exist would show a
   permanent outage, which happened once already with `pacestreak.net`.
-- Schedule `make backup` daily and copy `./backups` off the host.
-- Name the API host and email provider on `/privacy`.
+- Set up a scheduled `make backup`-equivalent and off-host copies. Lower
+  urgency than before: Neon and Upstash both carry their own managed
+  point-in-time recovery, which a self-hosted Postgres/Redis container never
+  had.
+- Name the API host (GCP), Neon and Upstash on `/privacy`.
+- **Rotate every credential that was pasted into a chat session to get here**:
+  the Cloudflare API token, the R2 access key/secret, the GHCR PAT. None of
+  them are committed to git, but all of them are in a conversation transcript
+  now, which this project's own security posture treats as compromised.
 
 ### Needs the Cloudflare dashboard
 
