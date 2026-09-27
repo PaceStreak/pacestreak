@@ -108,6 +108,16 @@ there are no third-party runtime dependencies. **The user explicitly chose to
 stay on Cloudflare's free tier and add no third-party services**, so do not
 propose analytics, a font CDN, or an embedded widget.
 
+**One deliberate exception, on `app` only:** Cloudflare Turnstile
+(`challenges.cloudflare.com`), added 2026-09-27 at the user's request to stop
+signup/login/forgot-password/resend-verification/recover from being used to
+empty Brevo's free SMTP quota or grind past the per-IP rate limits. It's
+Cloudflare's own product, not a new vendor, and it's the one script/frame/
+connect exception in `app/public/_headers`. Full record in
+`api/README.md#cloudflare-turnstile-guards-the-mailer-and-passwordrecovery-endpoints`.
+Do not widen this further and do not add it to `web` or `blog` — those stay
+untouched.
+
 It has already caught two build-tool behaviours: Astro inlining a small
 `<script>`, and Vite emitting a sub-4KB asset as a base64 `data:` URI. Both are
 fixed by **`assetsInlineLimit: 0` in `astro.config.mjs`, which is load-bearing**
@@ -239,17 +249,31 @@ cd app && npm run dev         # :5173, talks to :8000
 
 ### What's left (details in HANDOFF.md §4)
 
-1. **Where the API runs** (the user's decision). `api/compose.prod.yaml` is
-   ready for any Docker host behind a TLS proxy: `make prod-config`, then
-   `make prod-up`.
-2. **Email provider** (the user's decision). SMTP is production-ready; set
-   `SMTP_*` and DNS (SPF, DKIM, DMARC).
-3. **Rotate the dev admin password:** `make set-password email=admin@pacestreak.com`.
-4. After deployment: custom domains, Upptime monitors, a daily
+1. **Where the API runs** (the user's decision, still open). Leaning Oracle
+   Cloud Always Free (2 OCPU/12 GB Ampere A1 after Oracle's June 2026 cut,
+   still comfortably enough for this stack) — not yet provisioned.
+   `api/compose.prod.yaml` is ready for any Docker host behind a TLS proxy:
+   `make prod-config`, then `make prod-up`.
+2. **Email provider: decided — Brevo.** SMTP credentials are in the local
+   `api/.env` (gitignored) and confirmed working end-to-end (test send, and a
+   real signup verification email, both delivered). Domain is authenticated
+   in Brevo (SPF/DKIM); branded subdomain deliberately left off — transactional
+   links (verify/reset) shouldn't redirect through a third-party tracking
+   domain. **Still open:** naming Brevo on `/privacy`, and production DNS/SMTP
+   env vars once the API host exists.
+3. **Cloudflare Turnstile: done**, 2026-09-27. Guards signup, login,
+   forgot-password, resend-verification and recover against emptying Brevo's
+   free daily send limit or grinding past the per-IP rate limits. Full record
+   in `api/README.md`'s Turnstile section and this file's CSP section above.
+   Site/secret keys are in `app/.env` and `api/.env` (both gitignored);
+   `TURNSTILE_SECRET_KEY` is required in production
+   (`compose.prod.yaml`/`app/main.py`).
+4. **Rotate the dev admin password:** `make set-password email=admin@pacestreak.com`.
+5. After deployment: custom domains, Upptime monitors, a daily
    `make backup` with off-host copies, and naming the providers on `/privacy`.
-5. **Cloudflare edge cache purge** for five stale files on `www` (dashboard
+6. **Cloudflare edge cache purge** for five stale files on `www` (dashboard
    only; the token is `zone:read`).
-6. The new privacy and terms pages are live but need a qualified review.
+7. The new privacy and terms pages are live but need a qualified review.
 
 The questions already asked (hosting, email, waitlist), the options offered
 and the user's answers are in `HANDOFF.md` §5. Don't re-ask; "decide later"
@@ -258,7 +282,8 @@ means still open, not declined. The user's checklist is `HANDOFF.md` §6.
 Done since the audit: items 5–9 (per-post OG images, JSON-LD, prev/next,
 tags, privacy/terms). Item 10, the waitlist, was **skipped by the user**.
 
-The blog has **forty-four posts**.
+The blog has **forty-four posts**. The logo is the lime bolt, not the
+calendar-and-X mark (see "Visual world" above).
 
 ### Operations quick reference
 
