@@ -7,9 +7,9 @@ below were tried and rejected for a stated reason.
 
 **PaceStreak** is a habit and streak tracker: training, and anything else worth
 doing regularly (learning, health, mind, habits being broken). Keep each one
-weekly, watch the grid fill. Nothing is launched. There is a public site, a blog and a
-status page (all live), plus a **built but undeployed** product: `api`
-(FastAPI, ~215 routes, 200 tests) and `app` (React PWA). `HANDOFF.md` in this
+weekly, watch the grid fill. Everything is live: the public site, the blog, the
+status page, and the product itself: `api` (FastAPI, ~250 routes, ~250 tests) at
+`api.pacestreak.com` and `app` (React PWA) at `app.pacestreak.com`. `HANDOFF.md` in this
 folder is the latest detailed handoff: every recent decision, and what's left.
 
 Owner: AlzyWelzy (`welzyalzy@gmail.com`). GitHub org: `PaceStreak`.
@@ -31,8 +31,8 @@ Clone everything with `git clone --recurse-submodules`.
 | `web/` | `PaceStreak/web` | `main` | private | AGPL-3.0 | **Live** at `www.pacestreak.com` |
 | `blog/` | `PaceStreak/blog` | `main` | private | AGPL-3.0 | **Live** at `blog.pacestreak.com` |
 | `status/` | `PaceStreak/status` | `master` | **public** | MIT | **Live** at `status.pacestreak.com` |
-| `app/` | `PaceStreak/app` | `main` | private | AGPL-3.0 | Built (React 19 + Vite PWA), not deployed |
-| `api/` | `PaceStreak/api` | `main` | private | AGPL-3.0 | Built (FastAPI + Postgres + Redis + worker), not deployed |
+| `app/` | `PaceStreak/app` | `main` | private | AGPL-3.0 | **Live** at `app.pacestreak.com` (Cloudflare Pages, Git-connected) |
+| `api/` | `PaceStreak/api` | `main` | private | AGPL-3.0 | **Live** at `api.pacestreak.com` (GCP VM, Docker Swarm, Cloudflare Tunnel) |
 | `infra/` | `PaceStreak/infra` | `main` | private | AGPL-3.0 | Documentation, not automation |
 | `.github/` | `PaceStreak/.github` | `main` | **public** | MIT | Org profile + health files |
 
@@ -56,8 +56,8 @@ personal Upptime instance monitoring `status.rajpoot.dev`. Separate thing.
 ```text
 pacestreak.com        301 → www          Cloudflare Redirect Rule
 www.pacestreak.com    web    (live)      Cloudflare Pages, Git-connected
-app.pacestreak.com    app    (no DNS)    the product, built, not deployed
-api.pacestreak.com    api    (no DNS)    the backend, built, hosting undecided
+app.pacestreak.com    app    (live)      Cloudflare Pages, Git-connected
+api.pacestreak.com    api    (live)      GCP e2-micro VM via Cloudflare Tunnel
 blog.pacestreak.com   blog   (live)      Cloudflare Pages, Git-connected
 status.pacestreak.com status (live)      GitHub Pages, DNS-only (grey cloud)
 ```
@@ -68,9 +68,10 @@ eight failure modes, all of which actually happened here.
 
 ### Deployment
 
-**Push to `main` deploys.** `web` and `blog` are Git-connected Cloudflare Pages
-projects. There is no deploy workflow and no API token in either repo. CI exists
-only to fail a PR before it reaches `main`.
+**Push to `main` deploys.** `web`, `blog` and `app` are Git-connected Cloudflare
+Pages projects; `api` deploys itself from GHCR (see Outstanding work, item 1).
+The Pages repos have no deploy workflow and no API token; their CI exists only
+to fail a PR before it reaches `main`.
 
 Cloudflare deployment history is readable without a token:
 
@@ -118,6 +119,13 @@ connect exception in `app/public/_headers`. Full record in
 Do not widen this further and do not add it to `web` or `blog` — those stay
 untouched.
 
+**`Cache-Control: no-transform` on page routes is load-bearing too.** Cloudflare
+Web Analytics was switched on for the Pages projects and injects
+`static.cloudflareinsights.com/beacon.min.js` into HTML; the CSP blocks it,
+which costs a console error and Lighthouse Best Practices points on every
+page. `no-transform` (in each `public/_headers`) stops the edge rewriting
+pages. Better still, turn Web Analytics off in the dashboard; the token can't.
+
 It has already caught two build-tool behaviours: Astro inlining a small
 `<script>`, and Vite emitting a sub-4KB asset as a base64 `data:` URI. Both are
 fixed by **`assetsInlineLimit: 0` in `astro.config.mjs`, which is load-bearing**
@@ -154,7 +162,8 @@ forget. `infra/DECISIONS.md` has the full record.
 A proxied Cloudflare record with nothing behind it returns **522**, which reads
 to a visitor as a broken product — strictly worse than not resolving. Create the
 record by attaching a custom domain to a real deployment, never by hand in the
-DNS tab. This is why `app` and `api` have no records.
+DNS tab. `app` got its record from its Pages custom domain and `api` from its
+Cloudflare Tunnel, both attached to running deployments.
 
 ### Habits are never shown to anyone else
 
@@ -249,11 +258,16 @@ cd app && npm run dev         # :5173, talks to :8000
 
 ### What's left (details in HANDOFF.md §4)
 
-1. **Where the API runs** (the user's decision, still open). Leaning Oracle
-   Cloud Always Free (2 OCPU/12 GB Ampere A1 after Oracle's June 2026 cut,
-   still comfortably enough for this stack) — not yet provisioned.
-   `api/compose.prod.yaml` is ready for any Docker host behind a TLS proxy:
-   `make prod-config`, then `make prod-up`.
+1. **Where the API runs: decided and live.** GCP project `pacestreak`, VM
+   `pacestreak-api` (us-central1-a, e2-micro, free tier: **never change its
+   config**). Docker Swarm stack `pacestreak` (api, worker, cloudflared), Neon
+   Postgres, Upstash Redis. Push to `api` main → GitHub Actions publishes
+   `ghcr.io/pacestreak/api:latest` → the VM's `autodeploy.timer` (every 2
+   min, `api/deploy/gcp/autodeploy.sh`) rolls it out start-first; migrations
+   run on boot (`RUN_MIGRATIONS=1` in `compose.gcp.yaml`). Check with
+   `gcloud compute ssh pacestreak-api --zone us-central1-a` then
+   `sudo docker service ps pacestreak_api`. The user plans to move to a
+   bigger server; the 1 GB VM is tight but fine until then.
 2. **Email provider: decided — Brevo.** SMTP credentials are in the local
    `api/.env` (gitignored) and confirmed working end-to-end (test send, and a
    real signup verification email, both delivered). Domain is authenticated
@@ -282,7 +296,7 @@ means still open, not declined. The user's checklist is `HANDOFF.md` §6.
 Done since the audit: items 5–9 (per-post OG images, JSON-LD, prev/next,
 tags, privacy/terms). Item 10, the waitlist, was **skipped by the user**.
 
-The blog has **forty-four posts**. The logo is the lime bolt, not the
+The blog has **seventy-one posts**. The logo is the lime bolt, not the
 calendar-and-X mark (see "Visual world" above).
 
 ### Operations quick reference
