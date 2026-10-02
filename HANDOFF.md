@@ -1,23 +1,25 @@
-# PaceStreak: handoff (25 September 2026)
+# PaceStreak: handoff (updated 2 October 2026)
 
-For the next person or Claude session working in `~/Documents/pacestreak/`.
-Read `CLAUDE.md` first for the standing rules; this file records what was done
-in the latest sessions, why each decision was made, and what is left.
+For the next person or coding agent working in this workspace. Read
+`AGENTS.md` first for the standing rules; this file records what was built,
+why each decision was made, and what is left. Sections 1 to 3g are a dated
+history and describe the state *at the time*; §0, §4 and §6 are current.
 
 ---
 
 ## 0. State in one paragraph
 
-The public site, blog and status page are live. The product is **built and
-tested but not deployed**: the API (FastAPI, Postgres, Redis and a worker) has
-about 215 routes and 200 passing tests; the app is a React 19 PWA with 99
-unit tests, and every new screen was also driven end to end in a real browser. Everything is on `main` in every repo, and the root repo pins each
-component. **Pushing `main` in `web` or `blog` deploys it** (Cloudflare Pages is
-Git-connected). What blocks launch is two decisions only you can make, where
-the API runs and which email provider sends mail, plus the checklist in §6.
-The third and fourth rounds of features (§3b, §3c) were built on 25 September;
-weigh-ins and weight trends (§3d) the fifth (§3e), the sixth (§3f) and habits (§3g) on 26 September.
-PaceStreak is now positioned as a habit and streak tracker, not only for training.
+**Everything is live.** `www`, `blog`, `status`, `app` and `api` all answer
+on `pacestreak.com`. The API (FastAPI, ~260 routes, ~260 tests, a worker)
+runs on a free-tier GCP e2-micro as a Docker Swarm stack behind a Cloudflare
+Tunnel, with Neon Postgres, Upstash Redis and Brevo SMTP. Pushing `main`
+deploys every component: Cloudflare Pages builds `web`, `blog` and `app`, and
+the VM's `autodeploy.timer` pulls each new `api` image from GHCR. Every
+repository is public (2026-10-02), AGPL-3.0 except `status` and `.github`
+(MIT), with histories gitleaks-scanned first. Upptime monitors every host;
+`/privacy` names every provider. What remains is housekeeping only the owner
+can do (§6). Agent instructions moved from `CLAUDE.md` to `AGENTS.md` on
+2 October.
 
 ---
 
@@ -104,7 +106,7 @@ distinct hours, so the ordering of previous/next links is deterministic.
 | The dev compose override now mounts `alembic/` | This was the root cause of the earlier `security_events` crash: the container only saw migrations baked into its image. |
 | Every frontend read of a new stats field has a fallback (`?? []`) | The PWA caches `/me/stats` offline. A cached payload from an older build would otherwise crash the app. |
 | A smoke-test import into the dev admin account was deleted afterwards | Leave the dev data as it was found. |
-| No `Co-Authored-By: Claude` trailers; conventional commits; commits made as AlzyWelzy | Standing rules in `CLAUDE.md`. |
+| No AI attribution trailers; conventional commits; commits made as AlzyWelzy | Standing rules in `AGENTS.md`. |
 
 ---
 
@@ -337,7 +339,7 @@ in §5 (questions 8-11).
 | Whole-life streak | `profiles.life_target`, `user_stats.life_streak`, board `life_streak` | Training days plus non-quit habit days. Optional. |
 | Gamification | `game/xp.py` `habit_xp`, 4 badges, quest `habit_week` | 5 XP per habit-day up to its weekly target, 20 a day at most; 10 per kept habit week. Badges are named generically (profiles are public). |
 | Reminders | `worker.habit_reminders`, category `habits` | At the chosen hour, only if not done, not paused; push on by default because the person chose the hour. |
-| Privacy | Everywhere | **Habits never reach any social surface.** Recorded as a load-bearing constraint in `CLAUDE.md`. |
+| Privacy | Everywhere | **Habits never reach any social surface.** Recorded as a load-bearing constraint in `AGENTS.md`. |
 | App | `Habits`, `HabitDetail`, `HabitsToday`, `HabitRow`, `HabitForm` | Today shows habits for the part of the day first. Projected dates show the year when far off (a bug found in testing). |
 | Site | `web`, `blog` | Repositioned as "Habits and streaks": home, features (new Habits group), FAQ, about, privacy, changelog, blog tagline. Counts corrected: 29 achievements, 5 leaderboards. |
 
@@ -346,36 +348,36 @@ XP, badges and boards; sharing a habit would conflict with the privacy rule).
 
 ## 4. What's left
 
-**API hosting: decided and live, 27 September 2026.** GCP `e2-micro` (free
-tier, `us-central1`), Neon Postgres, Upstash Redis, GHCR image distribution,
-single-node Docker Swarm for zero-downtime CI-triggered deploys, Cloudflare
-Tunnel for ingress (no open port). `api.pacestreak.com` resolves and answers -
-see `infra/DECISIONS.md`. Email was already decided earlier (Brevo).
+### Done since the sections above were written
 
-### Needs your decision
+- **API hosting** (27 September): GCP e2-micro, Neon, Upstash, GHCR, Docker
+  Swarm with start-first rollouts, Cloudflare Tunnel. Record in
+  `infra/DECISIONS.md`.
+- **Email**: Brevo SMTP, domain authenticated with SPF and DKIM.
+- **Turnstile** on the mailer and password endpoints (27 September).
+- **App deployed** to Cloudflare Pages with `app.pacestreak.com` attached.
+- **Upptime monitors** for `app`, `api` (`/health`) and every TLS certificate.
+- **Providers named on `/privacy`**: Google Cloud, Neon, Upstash, Brevo,
+  Cloudflare. The `web` changelog now reads as released.
+- **Every repository public** (2 October), assistant attribution purged from
+  every history, and the change announced on the site and blog.
+- **Agent instructions** moved to `AGENTS.md` in the root and in each
+  component (2 October).
+
+### Still open
 
 1. **Change the dev admin password:** `make set-password email=admin@pacestreak.com`.
-
-### Blocked on deployment
-
-- Attach `app.pacestreak.com` as a custom domain to a real deployment (never
-  hand-made DNS records) - `api.pacestreak.com` is done, `app` is what's left.
-- Then add both hosts to Upptime. Adding them before they exist would show a
-  permanent outage, which happened once already with `pacestreak.net`.
-- Set up a scheduled `make backup`-equivalent and off-host copies. Lower
-  urgency than before: Neon and Upstash both carry their own managed
-  point-in-time recovery, which a self-hosted Postgres/Redis container never
-  had.
-- Name the API host (GCP), Neon and Upstash on `/privacy`.
-- **Rotate every credential that was pasted into a chat session to get here**:
-  the Cloudflare API token, the R2 access key/secret, the GHCR PAT. None of
-  them are committed to git, but all of them are in a conversation transcript
-  now, which this project's own security posture treats as compromised.
-
-### Needs the Cloudflare dashboard
-
-- Purge the stale edge cache on `www` (five leftover files). The token is
-  `zone:read` only.
+2. **Rotate every credential pasted into a chat session**: the Cloudflare
+   API token, the R2 access key and secret, the GHCR PAT. None is committed,
+   but all are in transcripts, which this project treats as compromised.
+3. **Off-host backups.** Neon and Upstash have managed point-in-time
+   recovery; a scheduled dump with a copy kept off-provider is still missing.
+4. **Cloudflare dashboard** (the token is `zone:read`): purge five stale files
+   from `www`'s cache; optionally turn Web Analytics off for the Pages
+   projects (see the CSP section of `AGENTS.md`).
+5. **Legal review** of `/privacy` and `/terms`.
+6. **A bigger server** is planned; never change the e2-micro's config.
+7. **An AI vendor** for coach features: deferred by the owner.
 
 ### Deliberately not done
 
@@ -393,8 +395,8 @@ Kept here so the next session doesn't ask again, and doesn't treat a
 
 | # | Question | Options offered | Your answer | What it means now |
 | --- | --- | --- | --- | --- |
-| 1 | Where should the API (FastAPI + Postgres + Redis + worker) run in production? | **Small VPS (recommended)**: about €5 a month (e.g. Hetzner or DigitalOcean); a production compose stack with Caddy, backups and a deploy script. **Container platform**: Fly.io, Railway or Render; less ops, more cost, one more vendor. **Decide later**: build everything host-agnostic and leave deploy unwired. | **Decide later** | `api/compose.prod.yaml` runs on any Docker host behind any TLS proxy. Nothing is tied to a vendor. **Still open; it blocks launch.** |
-| 2 | Which email sender for verification and password-reset mail? | **Generic SMTP (recommended)**: harden the existing SMTP backend; works with Zoho, which already handles `hello@`, or any provider. **Cloudflare Email**: stays within the Cloudflare-only rule, but its sending API is newer, so it would need a new HTTP backend. **Decide later**: leave `console`; make SMTP production-ready but unconfigured. | **Decide later** | SMTP is hardened and provider-neutral; picking one is configuration only. Production refuses to start on `console`. **Still open; it blocks launch.** |
+| 1 | Where should the API (FastAPI + Postgres + Redis + worker) run in production? | **Small VPS (recommended)**: about €5 a month (e.g. Hetzner or DigitalOcean); a production compose stack with Caddy, backups and a deploy script. **Container platform**: Fly.io, Railway or Render; less ops, more cost, one more vendor. **Decide later**: build everything host-agnostic and leave deploy unwired. | **Decide later** | `api/compose.prod.yaml` runs on any Docker host behind any TLS proxy. Nothing is tied to a vendor. **Since decided (27 September): GCP e2-micro + Neon + Upstash, live.** |
+| 2 | Which email sender for verification and password-reset mail? | **Generic SMTP (recommended)**: harden the existing SMTP backend; works with Zoho, which already handles `hello@`, or any provider. **Cloudflare Email**: stays within the Cloudflare-only rule, but its sending API is newer, so it would need a new HTTP backend. **Decide later**: leave `console`; make SMTP production-ready but unconfigured. | **Decide later** | SMTP is hardened and provider-neutral; picking one is configuration only. Production refuses to start on `console`. **Since decided: Brevo, live.** |
 | 3 | Build the real waitlist signup on www (Pages Function + KV)? It would be the first network request `web` ever makes. | **Skip it (recommended)**: keep `mailto:` until launch, when "Sign up" replaces it. **Build it**: Pages Function + KV, double opt-in, rate limited. | **Skip it** | Audit item 10 is closed as won't-do. `web` still makes no network requests. |
 | 4 | Most of the request already existed; the gap was body weight (one per day, no moments, no % change). How to proceed? | **Build weigh-ins + write research (recommended)**. **Research doc only first**. **Build everything proposed**. | **Build weigh-ins + write research** | §3d. The research list is waiting for you to choose. |
 | 5 | Should weight tracking stay outside gamification? | **Keep it private (recommended)**: reward logging, never the number. **Allow weight-goal badges**, still never public. | **Keep it private** | Standing rule reaffirmed: no weight-based XP, badges or goals rewards. |
@@ -418,22 +420,22 @@ Kept here so the next session doesn't ask again, and doesn't treat a
 | Rebuild | "Update all the docs, rebuild the web repo as a full product site, write lots of blogs" | New site pages, 10 new posts, and every README, ARCHITECTURE and CHANGELOG updated. |
 | Features | "Implement all these [suggested features] … production grade" | Pause/injury mode, planned rest on the grid, weekly recap, GPX/FIT/CSV import, ICS feed, shortcuts, official account. |
 | Git | "Push all code to GitHub main, merge everything" | Fast-forward merges to `main` in all six repos; Cloudflare deployed `web` and `blog`. |
-| Git | "Make this root a repo with submodules, named `pacestreak`, private" | `PaceStreak/pacestreak` (private at first; every repo made public 2026-10-02), with seven submodules plus `CLAUDE.md`, `HANDOFF.md` and `README.md`. The dev admin password was removed from the docs before the first commit. |
+| Git | "Make this root a repo with submodules, named `pacestreak`, private" | `PaceStreak/pacestreak` (private at first; every repo made public 2026-10-02), with seven submodules plus the shared notes. The dev admin password was removed from the docs before the first commit. |
 | Remaining list | "Implement them all, production grade" | The whole of §3. |
 | This push | "Push all to GitHub on main, update all md files and the handoff" | This section, §6, and the push, including `web`'s legal pages. |
 | During that work | `/compact` typed mid-turn | It's a command you run yourself; it couldn't be run from inside the turn. |
-| After that | "What can we do about deployment now? And mails?" | Recommended: app on Cloudflare Pages (with the API, not before); API on one small VPS with `compose.prod.yaml` behind a **Cloudflare Tunnel** (no open ports, free). Hosts offered: **Oracle Cloud Always Free** (free, fiddly sign-up), **Hetzner CX22** (~€4/month, recommended), DigitalOcean/Linode (~$6). Mail: Zoho's free plan can't send SMTP; offered **Zoho ZeptoMail** (recommended: Zoho is already on `/privacy`), Amazon SES (cheapest, sandbox approval), Resend/Brevo free tiers (one more vendor). **No answer yet: both still open.** |
-| After that | "What about IONOS servers?" | Fine for this stack. Pick the **VPS** product (not Cloud Server or web hosting), the **4 GB** tier, an EU data centre, and check the minimum term and renewal price. Hetzner is still slightly easier (monthly, no commitment). **Still open.** |
+| After that | "What can we do about deployment now? And mails?" | Recommended: app on Cloudflare Pages (with the API, not before); API on one small VPS with `compose.prod.yaml` behind a **Cloudflare Tunnel** (no open ports, free). Hosts offered: **Oracle Cloud Always Free** (free, fiddly sign-up), **Hetzner CX22** (~€4/month, recommended), DigitalOcean/Linode (~$6). Mail: Zoho's free plan can't send SMTP; offered **Zoho ZeptoMail** (recommended: Zoho is already on `/privacy`), Amazon SES (cheapest, sandbox approval), Resend/Brevo free tiers (one more vendor). **Both since decided**: GCP for the API, Brevo for mail (§4). |
+| After that | "What about IONOS servers?" | Fine for this stack. Pick the **VPS** product (not Cloud Server or web hosting), the **4 GB** tier, an EU data centre, and check the minimum term and renewal price. Hetzner is still slightly easier (monthly, no commitment). **Superseded by the GCP choice.** |
 | After that | "How does this project use the scheduler and worker?" | Explained `app/worker.py`: one process, six jobs per tick, a Redis lock, dedupe keys, `--once` for cron. |
 | After that | "Before we deploy, what features can we implement?" then "Implement all of them" | §3b. |
 | After that | "What are all the features we can implement?", then "Implementing them all" and "continue now properly … check everything" | §3c. Four groups offered (pre-launch, streaks, training, social) plus a "not recommended" list: native apps, Strava/Garmin sync (third party), search-indexed public profiles. All four groups built; illustrations skipped as needing real art. |
 
-### Standing rules that shaped the answers (from `CLAUDE.md`)
+### Standing rules that shaped the answers (from `AGENTS.md`)
 
 - Cloudflare free tier, and no third-party services, analytics or embeds.
   That's why hosting and email are genuine decisions, not defaults.
 - No pricing claims anywhere.
-- No `Co-Authored-By: Claude` trailers; conventional commits; commits made as
+- No AI attribution trailers; conventional commits; commits made as
   AlzyWelzy.
 - Never create DNS records ahead of a real deployment (you'd get a 522).
 
@@ -441,38 +443,16 @@ Kept here so the next session doesn't ask again, and doesn't treat a
 
 ## 6. Your checklist
 
-In order. Nothing below needs code, only your decisions and accounts.
+Nothing below needs code, only your accounts.
 
-1. [ ] **Change the dev admin password:**
-   `cd api && make set-password email=admin@pacestreak.com`.
-2. [ ] **Get the privacy policy and terms reviewed** by someone qualified
-   (`web/src/pages/privacy.astro`, `terms.astro`). Add a governing-law
-   clause if the reviewer wants one.
-3. [ ] **Decide where the API runs** (question 1 above). Then:
-   - generate production keys: `openssl genrsa` for JWT, `make vapid` for push,
-     and a Fernet key for `TOTP_ENCRYPTION_KEY`;
-   - fill `.env` (mode 0600) and run `make prod-config` until it's clean;
-   - `make prod-up`, behind a TLS proxy forwarding to `127.0.0.1:8000`;
-   - run `make recompute-all` once (backfills buddy and group streak data);
-   - leave `TERMS_VERSION` at `2026-09-25` for launch; bump it with any
-     later material change to /terms or /privacy;
-   - attach `api.pacestreak.com` via that host (not a hand-made DNS record).
-   - Passkeys are bound to `app.pacestreak.com`. Don't set `WEBAUTHN_RP_ID`
-     to anything else, and never change it after launch.
-4. [ ] **Decide the email provider** (question 2 above). Set `SMTP_*` and add
-   SPF, DKIM and DMARC DNS records for `pacestreak.com`.
-5. [ ] **Name both providers** on `/privacy` (the "Service providers"
-   section) and push `web`.
-6. [ ] **Deploy the app**: create the Pages project for `PaceStreak/app` and
-   attach `app.pacestreak.com` as a custom domain.
-7. [ ] **Schedule backups**: a daily `make backup` via cron or a systemd timer,
-   with `./backups` copied off the host.
-8. [ ] **Add monitors** for `api.pacestreak.com/health/ready`,
-   `api.pacestreak.com/health/worker` and `app.pacestreak.com`
-   in `status/.upptimerc.yml`, only once they respond.
-9. [ ] **Purge the Cloudflare cache** for `www` (Caching → Purge; five stale
-   files).
-10. [ ] After launch, flip `released` to `true` in
-    `web/src/data/changelog.ts` so the changelog stops saying "not live".
-11. [ ] Optionally, give the brand an official account: create it, then
-    **Admin → People → Make official**, with handle `pacestreak`.
+1. [ ] Change the dev admin password (`cd api && make set-password email=admin@pacestreak.com`).
+2. [ ] Rotate the Cloudflare token, R2 key and GHCR PAT; update the VM's
+   `docker login` and any local `.env` that held them.
+3. [ ] Purge `www`'s Cloudflare cache (Caching → Purge; five stale files).
+4. [ ] Optionally turn off Web Analytics on the `pacestreak`,
+   `pacestreak-blog` and app Pages projects.
+5. [ ] Get `/privacy` and `/terms` reviewed by someone qualified. Bump
+   `TERMS_VERSION` in `api` with any material change.
+6. [ ] Set up off-host backups.
+7. [ ] Optionally create the official `@pacestreak` account
+   (**Admin → People → Make official**).
