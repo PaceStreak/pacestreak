@@ -11,8 +11,8 @@ a stated reason.
 **PaceStreak** is a habit and streak tracker: training, and anything else worth
 doing regularly (learning, health, mind, habits being broken). Keep each one
 weekly, watch the grid fill. Everything is live: the public site, the blog, the
-status page, and the product itself: `api` (FastAPI, ~260 routes, ~260 tests) at
-`api.pacestreak.com` and `app` (React 19 PWA, ~100 unit tests) at
+status page, and the product itself: `api` (FastAPI, ~265 routes, ~285 tests) at
+`api.pacestreak.com` and `app` (React 19 PWA, ~120 unit tests, Playwright e2e) at
 `app.pacestreak.com`. `HANDOFF.md` in this folder is the detailed history:
 every decision, the questions asked and answered, and what's left.
 

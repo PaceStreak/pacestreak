@@ -10,7 +10,7 @@ history and describe the state *at the time*; §0, §4 and §6 are current.
 ## 0. State in one paragraph
 
 **Everything is live.** `www`, `blog`, `status`, `app` and `api` all answer
-on `pacestreak.com`. The API (FastAPI, ~260 routes, ~260 tests, a worker)
+on `pacestreak.com`. The API (FastAPI, ~265 routes, ~285 tests, a worker)
 runs on a free-tier GCP e2-micro as a Docker Swarm stack behind a Cloudflare
 Tunnel, with Neon Postgres, Upstash Redis and Brevo SMTP. Pushing `main`
 deploys every component: Cloudflare Pages builds `web`, `blog` and `app`, and
@@ -365,6 +365,28 @@ XP, badges and boards; sharing a habit would conflict with the privacy rule).
   component (2 October).
 - **Cloudflare cache purged and Web Analytics turned off** by you
   (2 October).
+- **Accounts consolidated** (2 October): `manvendra@rajpoot.dev` merged
+  into `admin@pacestreak.com` with the admin merge tool, which holds the
+  official `@pacestreak` handle; `amit@rajpoot.me` holds `@rajpoot`. A Neon
+  branch `before-account-merge-2026-10-02` was kept as a safety copy.
+- **Reserved handles** widened to patterns (anything spelling "pacestreak",
+  staff, support and system words with separators and digits);
+  `api/app/profile/reserved.py`.
+- **The 2 October feature batch**, all live: a two-way plate calculator,
+  V-handle and neutral-grip cable work, 283 exercises, 24 routines and
+  22 plans, Strong/Hevy/FitNotes import, habit weekdays and single-habit
+  pause, quiet days and weekly backup email, bulk session edits with Undo,
+  a whole-plan calendar, preset reactions, a Coaching overview, crash-alert
+  emails, the install offer at three moments, and the You page's two-column
+  layout. Fixes: unsynced writes are parked across sign-out instead of
+  wiped, a reload no longer signs every device out (30 s refresh grace),
+  the habit badge skips paused and unplanned habits.
+- **Testing and capacity**: Playwright e2e in `app/e2e` against the real
+  API, in CI; `api/scripts/loadtest.py` and the numbers in
+  `api/README.md#capacity-measured-2026-10-02` (about 40-45 req/s per
+  process; production latency is mostly the India-Iowa round trip).
+- **Blog** at eighty-four posts, and `/changelog`, `/features` and
+  `/social` on `www` updated to match the app.
 - **Privacy and terms self-reviewed** (2 October), against the code and
   GDPR, at your request instead of a paid review. Added: who runs the
   service, the legal basis for each kind of data (explicit consent for
@@ -438,6 +460,13 @@ Kept here so the next session doesn't ask again, and doesn't treat a
 | After that | "How does this project use the scheduler and worker?" | Explained `app/worker.py`: one process, six jobs per tick, a Redis lock, dedupe keys, `--once` for cron. |
 | After that | "Before we deploy, what features can we implement?" then "Implement all of them" | §3b. |
 | After that | "What are all the features we can implement?", then "Implementing them all" and "continue now properly … check everything" | §3c. Four groups offered (pre-launch, streaks, training, social) plus a "not recommended" list: native apps, Strava/Garmin sync (third party), search-indexed public profiles. All four groups built; illustrations skipped as needing real art. |
+| 2 October | "Update all the readme files … go with an agents md file" | `AGENTS.md` became the single source of agent rules; `CLAUDE.md` imports it. |
+| 2 October | "What are off-host backups?" then "no we don't have it … why would there be a governing law" | Both declined; recorded in §4. |
+| 2 October | "Increase that list [of reserved usernames] … many many more" | Pattern-based reserved handles. |
+| 2 October | Merge `manvendra@rajpoot.dev` into `admin@pacestreak.com` as `@pacestreak`; give `amit@rajpoot.me` `@rajpoot` | Done in production (§4). |
+| 2 October | Barbell bar weight, cable attachments, "shit tons of exercises and workout plans", then "implement all of them" | The 2 October feature batch (§4). |
+| 2 October | "Why doesn't the user get a prompt to install?" then "implement all of them" | Install offer at three moments plus Settings. |
+| 2 October | "Create several blog posts and update the websites", then "update all the .md files in all repos" | Seven posts, site copy, and this pass over every repo's docs. |
 
 ### Standing rules that shaped the answers (from `AGENTS.md`)
 
@@ -457,5 +486,6 @@ Nothing below needs code, only your accounts.
 1. [ ] Change the dev admin password (`cd api && make set-password email=admin@pacestreak.com`).
 2. [ ] Rotate the Cloudflare token, R2 key and GHCR PAT; update the VM's
    `docker login` and any local `.env` that held them.
-3. [ ] Optionally create the official `@pacestreak` account
-   (**Admin → People → Make official**).
+3. [x] The official `@pacestreak` account exists: `admin@pacestreak.com`.
+4. [ ] Delete the Neon branch `before-account-merge-2026-10-02` once you're
+   sure the merged account is right.
