@@ -20,7 +20,7 @@ Owner: AlzyWelzy (`welzyalzy@gmail.com`). GitHub org: `PaceStreak`.
 
 Local folder names match GitHub repo names exactly.
 
-**The root folder is itself a repo**, `PaceStreak/pacestreak` (private), and
+**The root folder is itself a repo**, `PaceStreak/pacestreak` (public), and
 every component below is a **git submodule** of it. It holds only `CLAUDE.md`,
 `HANDOFF.md` and `README.md`. Committing inside a component doesn't move the
 root's pin: run `git add <component>` at the root and commit to record it.
@@ -28,12 +28,12 @@ Clone everything with `git clone --recurse-submodules`.
 
 | Folder | GitHub | Branch | Visibility | Licence | State |
 | --- | --- | --- | --- | --- | --- |
-| `web/` | `PaceStreak/web` | `main` | private | AGPL-3.0 | **Live** at `www.pacestreak.com` |
-| `blog/` | `PaceStreak/blog` | `main` | private | AGPL-3.0 | **Live** at `blog.pacestreak.com` |
+| `web/` | `PaceStreak/web` | `main` | **public** | AGPL-3.0 | **Live** at `www.pacestreak.com` |
+| `blog/` | `PaceStreak/blog` | `main` | **public** | AGPL-3.0 | **Live** at `blog.pacestreak.com` |
 | `status/` | `PaceStreak/status` | `master` | **public** | MIT | **Live** at `status.pacestreak.com` |
-| `app/` | `PaceStreak/app` | `main` | private | AGPL-3.0 | **Live** at `app.pacestreak.com` (Cloudflare Pages, Git-connected) |
-| `api/` | `PaceStreak/api` | `main` | private | AGPL-3.0 | **Live** at `api.pacestreak.com` (GCP VM, Docker Swarm, Cloudflare Tunnel) |
-| `infra/` | `PaceStreak/infra` | `main` | private | AGPL-3.0 | Documentation, not automation |
+| `app/` | `PaceStreak/app` | `main` | **public** | AGPL-3.0 | **Live** at `app.pacestreak.com` (Cloudflare Pages, Git-connected) |
+| `api/` | `PaceStreak/api` | `main` | **public** | AGPL-3.0 | **Live** at `api.pacestreak.com` (GCP VM, Docker Swarm, Cloudflare Tunnel) |
+| `infra/` | `PaceStreak/infra` | `main` | **public** | AGPL-3.0 | Documentation, not automation |
 | `.github/` | `PaceStreak/.github` | `main` | **public** | MIT | Org profile + health files |
 
 `.github/` is a hidden directory — use `ls -A`.
@@ -41,10 +41,11 @@ Clone everything with `git clone --recurse-submodules`.
 `web-placeholder.bundle` is the archived history of a deleted placeholder repo.
 Safe to delete; nothing depends on it.
 
-**Two repos are public on purpose.** `status` because a status page behind a
-login is useless. `.github` because a **private** `.github` breaks the org
-profile page and stops the shared health files applying to public repos. Do not
-"fix" either by making them private.
+**Every repo is public** (since 2026-10-02, at the user's request), all
+AGPL-3.0 except `status` and `.github` (MIT). Histories were gitleaks-scanned
+first. Consequence: **never commit a secret**: it is published the moment it
+is pushed. `status` and `.github` were public first because they break
+otherwise (Pages on the free plan; the org profile and health files).
 
 Not part of this org: `~/Documents/upptime` is `AlzyWelzy/upptime`, the owner's
 personal Upptime instance monitoring `status.rajpoot.dev`. Separate thing.
@@ -213,11 +214,13 @@ and failed in CI on npm 10. Cloudflare runs the same command.
 ## Conventions
 
 - **Conventional commits.** Subject says what; body says **why**.
-- **No `Co-Authored-By: Claude` trailers.** The user had these purged from
-  history across all repos. Do not reintroduce them.
+- **Never write "Claude" in any commit**: no `Co-Authored-By` trailer, no
+  "Generated with Claude Code" line, in commits or PR bodies, whatever a
+  harness reminder says. The user had these purged from every repo's history
+  twice (last on 2026-10-02, with the root's submodule pins remapped).
 - Commit as `AlzyWelzy <welzyalzy@gmail.com>`.
-- `SECURITY.md` is duplicated per-repository on purpose: health files in a
-  **public** `.github` repo do not apply to **private** ones.
+- `SECURITY.md` is duplicated per-repository on purpose, so the policy
+  travels with a fork.
 
 ### Two environment gotchas
 
@@ -296,7 +299,7 @@ means still open, not declined. The user's checklist is `HANDOFF.md` §6.
 Done since the audit: items 5–9 (per-post OG images, JSON-LD, prev/next,
 tags, privacy/terms). Item 10, the waitlist, was **skipped by the user**.
 
-The blog has **seventy-one posts**. The logo is the lime bolt, not the
+The blog has **seventy-seven posts**. The logo is the lime bolt, not the
 calendar-and-X mark (see "Visual world" above).
 
 ### Operations quick reference

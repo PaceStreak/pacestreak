@@ -418,7 +418,7 @@ Kept here so the next session doesn't ask again, and doesn't treat a
 | Rebuild | "Update all the docs, rebuild the web repo as a full product site, write lots of blogs" | New site pages, 10 new posts, and every README, ARCHITECTURE and CHANGELOG updated. |
 | Features | "Implement all these [suggested features] … production grade" | Pause/injury mode, planned rest on the grid, weekly recap, GPX/FIT/CSV import, ICS feed, shortcuts, official account. |
 | Git | "Push all code to GitHub main, merge everything" | Fast-forward merges to `main` in all six repos; Cloudflare deployed `web` and `blog`. |
-| Git | "Make this root a repo with submodules, named `pacestreak`, private" | `PaceStreak/pacestreak` (private), with seven submodules plus `CLAUDE.md`, `HANDOFF.md` and `README.md`. The dev admin password was removed from the docs before the first commit. |
+| Git | "Make this root a repo with submodules, named `pacestreak`, private" | `PaceStreak/pacestreak` (private at first; every repo made public 2026-10-02), with seven submodules plus `CLAUDE.md`, `HANDOFF.md` and `README.md`. The dev admin password was removed from the docs before the first commit. |
 | Remaining list | "Implement them all, production grade" | The whole of §3. |
 | This push | "Push all to GitHub on main, update all md files and the handoff" | This section, §6, and the push, including `web`'s legal pages. |
 | During that work | `/compact` typed mid-turn | It's a command you run yourself; it couldn't be run from inside the turn. |
