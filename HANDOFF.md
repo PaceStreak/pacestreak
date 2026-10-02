@@ -373,8 +373,7 @@ XP, badges and boards; sharing a habit would conflict with the privacy rule).
   disclaimers, Open Food Facts attribution, 30 days' notice before any
   shutdown. Corrected: backups are Neon's 6-hour restore history, not
   14 days. `terms_version` bumped to `2026-10-02`, so every account accepts
-  the new wording once. No governing-law clause: the owner's jurisdiction
-  isn't recorded, and consumer law where the user lives applies anyway.
+  the new wording once.
 
 ### Still open
 
@@ -382,14 +381,16 @@ XP, badges and boards; sharing a habit would conflict with the privacy rule).
 2. **Rotate every credential pasted into a chat session**: the Cloudflare
    API token, the R2 access key and secret, the GHCR PAT. None is committed,
    but all are in transcripts, which this project treats as compromised.
-3. **Off-host backups.** Neon and Upstash have managed point-in-time
-   recovery; a scheduled dump with a copy kept off-provider is still missing.
-4. **A bigger server** is planned; never change the e2-micro's config.
-5. **An AI vendor** for coach features: deferred by the owner.
+3. **A bigger server** is planned; never change the e2-micro's config.
+4. **An AI vendor** for coach features: deferred by the owner.
 
 ### Deliberately not done
 
 - The waitlist: skipped at your request.
+- Off-host backups: declined (2 October). Neon's 6-hour restore history is
+  the only backup, and `/privacy` says so. If this changes, update that line.
+- A governing-law clause in `/terms`: declined as unnecessary for a free
+  FOSS project; consumer law where the user lives applies.
 - Volume, calorie or body leaderboards; third-party sync; analytics; pricing.
 
 ---
@@ -456,8 +457,5 @@ Nothing below needs code, only your accounts.
 1. [ ] Change the dev admin password (`cd api && make set-password email=admin@pacestreak.com`).
 2. [ ] Rotate the Cloudflare token, R2 key and GHCR PAT; update the VM's
    `docker login` and any local `.env` that held them.
-3. [ ] Set up off-host backups, then update the "Backups" line on
-   `/privacy` with how long they're kept.
-4. [ ] Optionally add a governing-law line to `/terms` naming your country.
-5. [ ] Optionally create the official `@pacestreak` account
+3. [ ] Optionally create the official `@pacestreak` account
    (**Admin → People → Make official**).

@@ -298,11 +298,8 @@ cd app && npm run dev         # :5173, talks to :8000
 1. **Rotate the dev admin password:** `make set-password email=admin@pacestreak.com`.
 2. **Rotate every credential ever pasted into a chat session** (Cloudflare
    token, R2 key, GHCR PAT). None is in git, but a transcript counts as leaked.
-3. **Off-host backups.** Neon and Upstash keep their own point-in-time
-   recovery; a scheduled `make backup`-style dump with an off-host copy is
-   still not set up.
-4. A bigger server is planned; the e2-micro is tight but fine until then.
-5. An AI vendor for the coach features is **deferred by the user**, not
+3. A bigger server is planned; the e2-micro is tight but fine until then.
+4. An AI vendor for the coach features is **deferred by the user**, not
    declined. Don't add one unasked.
 
 Done on 2026-10-02: the stale `www` cache was purged and Web Analytics was
@@ -312,6 +309,10 @@ assistant at the owner's request, not by a lawyer; a professional review is
 still advisable if the user base grows or money is ever involved. Keep both
 pages true to the code, and bump `terms_version` in `api/app/config.py` with
 any material change (that makes every account accept again).
+
+**Declined by the owner, don't re-propose:** off-host backups (Neon's 6-hour
+restore history is the only backup, and `/privacy` says so), and a
+governing-law clause in `/terms`.
 
 The questions already asked (hosting, email, waitlist, habits, languages),
 the options offered and the user's answers are in `HANDOFF.md` §5. Don't
