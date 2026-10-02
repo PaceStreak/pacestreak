@@ -319,7 +319,7 @@ the options offered and the user's answers are in `HANDOFF.md` §5. Don't
 re-ask; "decide later" means still open, not declined. The waitlist was
 **skipped by the user**.
 
-The blog has **seventy-seven posts**. The logo is the lime bolt, not the
+The blog has **eighty-four posts**. The logo is the lime bolt, not the
 calendar-and-X mark (see "Visual world" above).
 
 ### Operations quick reference
