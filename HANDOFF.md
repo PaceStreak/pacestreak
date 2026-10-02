@@ -363,6 +363,18 @@ XP, badges and boards; sharing a habit would conflict with the privacy rule).
   every history, and the change announced on the site and blog.
 - **Agent instructions** moved to `AGENTS.md` in the root and in each
   component (2 October).
+- **Cloudflare cache purged and Web Analytics turned off** by you
+  (2 October).
+- **Privacy and terms self-reviewed** (2 October), against the code and
+  GDPR, at your request instead of a paid review. Added: who runs the
+  service, the legal basis for each kind of data (explicit consent for
+  health data, now named in the sign-up and re-accept wording), US data
+  storage and transfers, nutrition, eating-disorder and addiction
+  disclaimers, Open Food Facts attribution, 30 days' notice before any
+  shutdown. Corrected: backups are Neon's 6-hour restore history, not
+  14 days. `terms_version` bumped to `2026-10-02`, so every account accepts
+  the new wording once. No governing-law clause: the owner's jurisdiction
+  isn't recorded, and consumer law where the user lives applies anyway.
 
 ### Still open
 
@@ -372,12 +384,8 @@ XP, badges and boards; sharing a habit would conflict with the privacy rule).
    but all are in transcripts, which this project treats as compromised.
 3. **Off-host backups.** Neon and Upstash have managed point-in-time
    recovery; a scheduled dump with a copy kept off-provider is still missing.
-4. **Cloudflare dashboard** (the token is `zone:read`): purge five stale files
-   from `www`'s cache; optionally turn Web Analytics off for the Pages
-   projects (see the CSP section of `AGENTS.md`).
-5. **Legal review** of `/privacy` and `/terms`.
-6. **A bigger server** is planned; never change the e2-micro's config.
-7. **An AI vendor** for coach features: deferred by the owner.
+4. **A bigger server** is planned; never change the e2-micro's config.
+5. **An AI vendor** for coach features: deferred by the owner.
 
 ### Deliberately not done
 
@@ -448,11 +456,8 @@ Nothing below needs code, only your accounts.
 1. [ ] Change the dev admin password (`cd api && make set-password email=admin@pacestreak.com`).
 2. [ ] Rotate the Cloudflare token, R2 key and GHCR PAT; update the VM's
    `docker login` and any local `.env` that held them.
-3. [ ] Purge `www`'s Cloudflare cache (Caching → Purge; five stale files).
-4. [ ] Optionally turn off Web Analytics on the `pacestreak`,
-   `pacestreak-blog` and app Pages projects.
-5. [ ] Get `/privacy` and `/terms` reviewed by someone qualified. Bump
-   `TERMS_VERSION` in `api` with any material change.
-6. [ ] Set up off-host backups.
-7. [ ] Optionally create the official `@pacestreak` account
+3. [ ] Set up off-host backups, then update the "Backups" line on
+   `/privacy` with how long they're kept.
+4. [ ] Optionally add a governing-law line to `/terms` naming your country.
+5. [ ] Optionally create the official `@pacestreak` account
    (**Admin → People → Make official**).

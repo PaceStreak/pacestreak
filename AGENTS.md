@@ -125,12 +125,12 @@ connect exception in `app/public/_headers`. Full record in
 Do not widen this further and do not add it to `web` or `blog` — those stay
 untouched.
 
-**`Cache-Control: no-transform` on page routes is load-bearing too.** Cloudflare
-Web Analytics was switched on for the Pages projects and injects
-`static.cloudflareinsights.com/beacon.min.js` into HTML; the CSP blocks it,
-which costs a console error and Lighthouse Best Practices points on every
-page. `no-transform` (in each `public/_headers`) stops the edge rewriting
-pages. Better still, turn Web Analytics off in the dashboard; the token can't.
+**Keep `Cache-Control: no-transform` on page routes.** Cloudflare Web
+Analytics used to inject `static.cloudflareinsights.com/beacon.min.js` into
+HTML, which the CSP blocked (a console error and lost Lighthouse points on
+every page). The owner switched Web Analytics off on 2026-10-02; the header
+stays as a guard, so turning it back on, or any other edge rewrite, can't
+alter pages. Never turn Web Analytics back on: it is analytics.
 
 It has already caught two build-tool behaviours: Astro inlining a small
 `<script>`, and Vite emitting a sub-4KB asset as a base64 `data:` URI. Both are
@@ -301,13 +301,17 @@ cd app && npm run dev         # :5173, talks to :8000
 3. **Off-host backups.** Neon and Upstash keep their own point-in-time
    recovery; a scheduled `make backup`-style dump with an off-host copy is
    still not set up.
-4. **Cloudflare dashboard only** (the token is `zone:read`): purge five stale
-   files from `www`'s edge cache, and optionally turn Web Analytics off on
-   the Pages projects so the `no-transform` workaround stops mattering.
-5. The privacy and terms pages need a qualified legal review.
-6. A bigger server is planned; the e2-micro is tight but fine until then.
-7. An AI vendor for the coach features is **deferred by the user**, not
+4. A bigger server is planned; the e2-micro is tight but fine until then.
+5. An AI vendor for the coach features is **deferred by the user**, not
    declined. Don't add one unasked.
+
+Done on 2026-10-02: the stale `www` cache was purged and Web Analytics was
+turned off (both by the owner, in the dashboard). `/privacy` and `/terms`
+were reviewed against the code, GDPR and common FOSS practice by an AI
+assistant at the owner's request, not by a lawyer; a professional review is
+still advisable if the user base grows or money is ever involved. Keep both
+pages true to the code, and bump `terms_version` in `api/app/config.py` with
+any material change (that makes every account accept again).
 
 The questions already asked (hosting, email, waitlist, habits, languages),
 the options offered and the user's answers are in `HANDOFF.md` §5. Don't
