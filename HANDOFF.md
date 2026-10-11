@@ -11,10 +11,11 @@ history and describe the state *at the time*; §0, §4 and §6 are current.
 
 **Everything is live.** `www`, `blog`, `status`, `app` and `api` all answer
 on `pacestreak.com`. The API (FastAPI, ~265 routes, ~285 tests, a worker)
-runs on a free-tier GCP e2-micro as a Docker Swarm stack behind a Cloudflare
-Tunnel, with Neon Postgres, Upstash Redis and Brevo SMTP. Pushing `main`
-deploys every component: Cloudflare Pages builds `web`, `blog` and `app`, and
-the VM's `autodeploy.timer` pulls each new `api` image from GHCR. Every
+runs on FastAPI Cloud's free plan (moved from a GCP VM on 11 October), with
+its worker and migrations as GitHub Actions workflows, Neon Postgres, Upstash
+Redis and Brevo SMTP. Pushing `main` deploys every component: Cloudflare Pages
+builds `web`, `blog` and `app`, and FastAPI Cloud's GitHub integration deploys
+`api`. Every
 repository is public (2026-10-02), AGPL-3.0 except `status` and `.github`
 (MIT), with histories gitleaks-scanned first. Upptime monitors every host;
 `/privacy` names every provider. What remains is housekeeping only the owner
@@ -350,6 +351,16 @@ XP, badges and boards; sharing a habit would conflict with the privacy rule).
 
 ### Done since the sections above were written
 
+- **API moved off GCP** (11 October): the e2-micro's external IPv4 was not
+  free and the VM cannot reach anything without it, and the organisation
+  policies on the GCP project blocked every free workaround. The API is on
+  FastAPI Cloud (free plan); the worker is the `Worker tick` workflow
+  (`app.worker --once`, every five minutes); migrations are the `Migrate`
+  workflow. The `pacestreak` and `gcp-vps-lab` GCP projects were deleted and
+  purge after 30 days; three `google-mpf-*` projects remain because the
+  account cannot delete them. Record in `infra/DECISIONS.md`. The sections
+  below describe the GCP setup as it was and are kept as history.
+
 - **API hosting** (27 September): GCP e2-micro, Neon, Upstash, GHCR, Docker
   Swarm with start-first rollouts, Cloudflare Tunnel. Record in
   `infra/DECISIONS.md`.
@@ -403,7 +414,8 @@ XP, badges and boards; sharing a habit would conflict with the privacy rule).
 2. **Rotate every credential pasted into a chat session**: the Cloudflare
    API token, the R2 access key and secret, the GHCR PAT. None is committed,
    but all are in transcripts, which this project treats as compromised.
-3. **A bigger server** is planned; never change the e2-micro's config.
+3. **A bigger server** is optional now: the API is on FastAPI Cloud's free
+   plan (0.1 vCPU), which is the first thing to revisit if it feels slow.
 4. **An AI vendor** for coach features: deferred by the owner.
 
 ### Deliberately not done
@@ -484,8 +496,14 @@ Kept here so the next session doesn't ask again, and doesn't treat a
 Nothing below needs code, only your accounts.
 
 1. [ ] Change the dev admin password (`cd api && make set-password email=admin@pacestreak.com`).
-2. [ ] Rotate the Cloudflare token, R2 key and GHCR PAT; update the VM's
-   `docker login` and any local `.env` that held them.
+2. [ ] Rotate the Cloudflare token, R2 key and GHCR PAT; update FastAPI
+   Cloud's environment, the `WORKER_ENV_JSON` secret in `PaceStreak/api` and
+   any local `.env` that held them.
+2a. [ ] Update `web/src/pages/privacy.astro` (Google Cloud → FastAPI Cloud and
+   GitHub) and decide whether that is a material change that bumps
+   `terms_version` in `api/app/config.py`; see the open PR in `PaceStreak/web`.
+2b. [ ] Delete the three `google-mpf-*` GCP projects (needs an organisation
+   admin) and close the unused GCP billing account if you want no GCP at all.
 3. [x] The official `@pacestreak` account exists: `admin@pacestreak.com`.
 4. [ ] Delete the Neon branch `before-account-merge-2026-10-02` once you're
    sure the merged account is right.
