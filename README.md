@@ -42,7 +42,7 @@ A submodule is pinned to a commit, not a branch. **Committing inside `web/`
 does not change what this repo points at** until you `git add web` here and
 commit. Deploys are unaffected either way: pushing to `main` in `web`, `blog`
 or `app` deploys it on Cloudflare Pages, and pushing to `main` in `api`
-publishes an image the server rolls out within a couple of minutes. Push a
+deploys it on FastAPI Cloud, and publishes the image the scheduled worker runs. Push a
 component before the root commit that pins it.
 
 `status` is an Upptime repo that commits to itself every few minutes, so its

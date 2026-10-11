@@ -37,7 +37,7 @@ with `git clone --recurse-submodules`.
 | `blog/` | `PaceStreak/blog` | `main` | **public** | AGPL-3.0 | **Live** at `blog.pacestreak.com` |
 | `status/` | `PaceStreak/status` | `master` | **public** | MIT | **Live** at `status.pacestreak.com` |
 | `app/` | `PaceStreak/app` | `main` | **public** | AGPL-3.0 | **Live** at `app.pacestreak.com` (Cloudflare Pages, Git-connected) |
-| `api/` | `PaceStreak/api` | `main` | **public** | AGPL-3.0 | **Live** at `api.pacestreak.com` (GCP VM, Docker Swarm, Cloudflare Tunnel) |
+| `api/` | `PaceStreak/api` | `main` | **public** | AGPL-3.0 | **Live** at `api.pacestreak.com` (FastAPI Cloud; worker and migrations in GitHub Actions) |
 | `infra/` | `PaceStreak/infra` | `main` | **public** | AGPL-3.0 | Documentation, not automation |
 | `.github/` | `PaceStreak/.github` | `main` | **public** | MIT | Org profile + health files |
 
@@ -63,7 +63,7 @@ personal Upptime instance monitoring `status.rajpoot.dev`. Separate thing.
 pacestreak.com        301 → www          Cloudflare Redirect Rule
 www.pacestreak.com    web    (live)      Cloudflare Pages, Git-connected
 app.pacestreak.com    app    (live)      Cloudflare Pages, Git-connected
-api.pacestreak.com    api    (live)      GCP e2-micro VM via Cloudflare Tunnel
+api.pacestreak.com    api    (live)      FastAPI Cloud, DNS-only CNAME
 blog.pacestreak.com   blog   (live)      Cloudflare Pages, Git-connected
 status.pacestreak.com status (live)      GitHub Pages, DNS-only (grey cloud)
 ```
@@ -75,7 +75,8 @@ eight failure modes, all of which actually happened here.
 ### Deployment
 
 **Push to `main` deploys.** `web`, `blog` and `app` are Git-connected Cloudflare
-Pages projects; `api` deploys itself from GHCR (see Outstanding work, item 1).
+Pages projects; `api` deploys through FastAPI Cloud's GitHub integration (see Outstanding
+work, item 1).
 The Pages repos have no deploy workflow and no API token; their CI exists only
 to fail a PR before it reaches `main`.
 
@@ -168,8 +169,8 @@ forget. `infra/DECISIONS.md` has the full record.
 A proxied Cloudflare record with nothing behind it returns **522**, which reads
 to a visitor as a broken product — strictly worse than not resolving. Create the
 record by attaching a custom domain to a real deployment, never by hand in the
-DNS tab. `app` got its record from its Pages custom domain and `api` from its
-Cloudflare Tunnel, both attached to running deployments.
+DNS tab. `app` got its record from its Pages custom domain and `api` from FastAPI
+Cloud's custom-domain setup, both attached to running deployments.
 
 ### Habits are never shown to anyone else
 
@@ -270,16 +271,18 @@ cd app && npm run dev         # :5173, talks to :8000
 
 ### How production runs
 
-1. **API: GCP, live since 2026-09-27.** GCP project `pacestreak`, VM
-   `pacestreak-api` (us-central1-a, e2-micro, free tier: **never change its
-   config**). Docker Swarm stack `pacestreak` (api, worker, cloudflared), Neon
-   Postgres, Upstash Redis. Push to `api` main → GitHub Actions publishes
-   `ghcr.io/pacestreak/api:latest` → the VM's `autodeploy.timer` (every 2
-   min, `api/deploy/gcp/autodeploy.sh`) rolls it out start-first; migrations
-   run on boot (`RUN_MIGRATIONS=1` in `compose.gcp.yaml`). Check with
-   `gcloud compute ssh pacestreak-api --zone us-central1-a` then
-   `sudo docker service ps pacestreak_api`. The user plans to move to a
-   bigger server; the 1 GB VM is tight but fine until then.
+1. **API: FastAPI Cloud, live since 2026-10-11** (before that a GCP VM from
+   2026-09-27; the GCP projects are deleted). App `pacestreak-api` on the free
+   plan (0.1 vCPU, scale-to-zero, us-east-1), custom domain
+   `api.pacestreak.com`, Neon Postgres, Upstash Redis. Push to `api` main →
+   FastAPI Cloud's GitHub integration deploys it; the `Migrate` workflow runs
+   `alembic upgrade head` when `alembic/**` changes (it lands about a minute
+   after the deploy, so migrations must stay backward compatible); the `Worker
+   tick` workflow runs `app.worker --once` every five minutes from the GHCR
+   image, with the environment in the `WORKER_ENV_JSON` secret. Check with
+   `fastapi cloud deployments list` and `gh run list -R PaceStreak/api`;
+   `infra/RUNBOOK.md` has the failure modes. Environment variables live in two
+   places (FastAPI Cloud and `WORKER_ENV_JSON`): change both.
 2. **Email: Brevo SMTP.** Domain authenticated (SPF/DKIM); the branded
    tracking subdomain is deliberately off, so verify/reset codes never route
    through a third-party tracking domain. Free tier: 300 mails a day.
@@ -290,15 +293,19 @@ cd app && npm run dev         # :5173, talks to :8000
 4. **App:** Cloudflare Pages, Git-connected, custom domain attached.
 5. **Monitoring:** Upptime in `status/.upptimerc.yml` watches every host,
    including `api.pacestreak.com/health`, plus each TLS certificate.
-6. **`/privacy` names every provider**: Google Cloud, Neon, Upstash, Brevo,
-   Cloudflare.
+6. **`/privacy` names every provider.** It still lists Google Cloud and
+   needs FastAPI Cloud and GitHub (the worker runs in Actions); see
+   `HANDOFF.md` §6 before changing it, because a material edit bumps
+   `terms_version`.
 
 ### What's left (details in HANDOFF.md §4 and §6)
 
 1. **Rotate the dev admin password:** `make set-password email=admin@pacestreak.com`.
 2. **Rotate every credential ever pasted into a chat session** (Cloudflare
    token, R2 key, GHCR PAT). None is in git, but a transcript counts as leaked.
-3. A bigger server is planned; the e2-micro is tight but fine until then.
+   Rotate API secrets in FastAPI Cloud **and** `WORKER_ENV_JSON`.
+3. The API's free plan is 0.1 vCPU; if it proves too slow, FastAPI Cloud's paid
+   plan or a small VPS is the next step (`infra/DECISIONS.md`).
 4. An AI vendor for the coach features is **deferred by the user**, not
    declined. Don't add one unasked.
 
