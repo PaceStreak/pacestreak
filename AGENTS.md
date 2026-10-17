@@ -37,7 +37,7 @@ with `git clone --recurse-submodules`.
 | `blog/` | `PaceStreak/blog` | `main` | **private** | AGPL-3.0 | **Live** at `blog.pacestreak.com` |
 | `status/` | `PaceStreak/status` | `master` | **public** | MIT | **Live** at `status.pacestreak.com` |
 | `app/` | `PaceStreak/app` | `main` | **private** | AGPL-3.0 | **Live** at `app.pacestreak.com` (Cloudflare Pages, Git-connected) |
-| `api/` | `PaceStreak/api` | `main` | **public** | AGPL-3.0 | **Live** at `api.pacestreak.com` (FastAPI Cloud; worker and migrations in GitHub Actions) |
+| `api/` | `PaceStreak/api` | `main` | **private** | AGPL-3.0 | **Live** at `api.pacestreak.com` (FastAPI Cloud; worker and migrations in GitHub Actions) |
 | `infra/` | `PaceStreak/infra` | `main` | **private** | AGPL-3.0 | Documentation, not automation |
 | `.github/` | `PaceStreak/.github` | `main` | **public** | MIT | Org profile + health files |
 
@@ -46,15 +46,14 @@ with `git clone --recurse-submodules`.
 `web-placeholder.bundle` is the archived history of a deleted placeholder repo.
 Safe to delete; nothing depends on it.
 
-**Only `api`, `status` and `.github` are public** (since 2026-10-17, at the
-user's request; every repo was public from 2026-10-02). `web`, `blog`, `app`,
-`infra` and the root `pacestreak` repo are private. `status` and `.github`
-must be public (Pages on the free plan; the org profile and health files).
-`api` stays public because its `Worker tick` runs every five minutes in
-Actions, far past the free plan's 2,000 private-repo minutes a month.
-Cloudflare Pages builds private repos fine. Consequence: **never commit a
-secret** to any repo; the public ones publish it instantly. Site copy must not
-claim the app or sites are open source: only the API is.
+**Only `status` and `.github` are public** (since 2026-10-17, at the user's
+request; every repo was public from 2026-10-02). They must be (Pages on the
+free plan; the org profile and health files). Everything else is private.
+Cloudflare Pages builds private repos fine. Caveat: the `api` `Worker tick`
+runs every five minutes in Actions and will exhaust the free plan's 2,000
+private minutes a month; the user is rewriting the API as Hono on Workers,
+which retires it. Consequence: **never commit a secret** to the public repos.
+Site copy must not claim any code is open source.
 
 Not part of this org: `~/Documents/upptime` is `AlzyWelzy/upptime`, the owner's
 personal Upptime instance monitoring `status.rajpoot.dev`. Separate thing.
