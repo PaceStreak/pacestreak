@@ -320,9 +320,14 @@ still advisable if the user base grows or money is ever involved. Keep both
 pages true to the code, and bump `terms_version` in `api/app/config.py` with
 any material change (that makes every account accept again).
 
-**Declined by the owner, don't re-propose:** off-host backups (Neon's 6-hour
-restore history is the only backup, and `/privacy` says so), and a
-governing-law clause in `/terms`.
+**Declined by the owner, don't re-propose:** a governing-law clause in
+`/terms`.
+
+**Backups (owner decision, 2026-10-19, reversing the earlier "no off-host
+backups"):** D1 Time Travel, plus a nightly copy of the whole D1 database in
+Neon Postgres, schema `d1_backup` (`api/.github/workflows/backup.yml`, 23:30
+IST). The Python-era Neon tables were dumped to the owner's machine first.
+`/privacy` must describe both before it is next published.
 
 The questions already asked (hosting, email, waitlist, habits, languages),
 the options offered and the user's answers are in `HANDOFF.md` §5. Don't
