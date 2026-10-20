@@ -33,12 +33,12 @@ with `git clone --recurse-submodules`.
 
 | Folder | GitHub | Branch | Visibility | Licence | State |
 | --- | --- | --- | --- | --- | --- |
-| `web/` | `PaceStreak/web` | `main` | **private** | AGPL-3.0 | **Live** at `www.pacestreak.com` |
-| `blog/` | `PaceStreak/blog` | `main` | **private** | AGPL-3.0 | **Live** at `blog.pacestreak.com` |
+| `web/` | `PaceStreak/web` | `main` | **public** | AGPL-3.0 | **Live** at `www.pacestreak.com` |
+| `blog/` | `PaceStreak/blog` | `main` | **public** | AGPL-3.0 | **Live** at `blog.pacestreak.com` |
 | `status/` | `PaceStreak/status` | `master` | **public** | MIT | **Live** at `status.pacestreak.com` |
-| `app/` | `PaceStreak/app` | `main` | **private** | AGPL-3.0 | **Live** at `app.pacestreak.com` (Cloudflare Pages, Git-connected) |
-| `api/` | `PaceStreak/api` | `main` | **private** | AGPL-3.0 | **Live** at `api.pacestreak.com` (FastAPI Cloud; worker and migrations in GitHub Actions) |
-| `infra/` | `PaceStreak/infra` | `main` | **private** | AGPL-3.0 | Documentation, not automation |
+| `app/` | `PaceStreak/app` | `main` | **public** | AGPL-3.0 | **Live** at `app.pacestreak.com` (Cloudflare Pages, Git-connected) |
+| `api/` | `PaceStreak/api` | `main` | **public** | AGPL-3.0 | **Live** at `api.pacestreak.com` (Cloudflare Workers + D1; Python kept on branch `old`) |
+| `infra/` | `PaceStreak/infra` | `main` | **public** | AGPL-3.0 | Documentation, not automation |
 | `.github/` | `PaceStreak/.github` | `main` | **public** | MIT | Org profile + health files |
 
 `.github/` is a hidden directory — use `ls -A`.
@@ -46,14 +46,13 @@ with `git clone --recurse-submodules`.
 `web-placeholder.bundle` is the archived history of a deleted placeholder repo.
 Safe to delete; nothing depends on it.
 
-**Only `status` and `.github` are public** (since 2026-10-17, at the user's
-request; every repo was public from 2026-10-02). They must be (Pages on the
-free plan; the org profile and health files). Everything else is private.
-Cloudflare Pages builds private repos fine. Caveat: the `api` `Worker tick`
-runs every five minutes in Actions and will exhaust the free plan's 2,000
-private minutes a month; the user is rewriting the API as Hono on Workers,
-which retires it. Consequence: **never commit a secret** to the public repos.
-Site copy must not claim any code is open source.
+**Every repository is public and open source (AGPL-3.0; `status` and
+`.github` MIT)**, again since 2026-10-20 at the owner's request (public
+2026-10-02 to 10-17, private 10-17 to 10-20). Site copy may say so. Every
+repo's full history was scanned for tokens, SMTP/API keys, database URLs and
+private keys before and after; none. Consequence: **never commit a secret**:
+keys live in Worker secrets, GitHub Actions secrets and gitignored
+`.env`/`.dev.vars` files only.
 
 Not part of this org: `~/Documents/upptime` is `AlzyWelzy/upptime`, the owner's
 personal Upptime instance monitoring `status.rajpoot.dev`. Separate thing.
