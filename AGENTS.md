@@ -11,7 +11,7 @@ a stated reason.
 **PaceStreak** is a habit and streak tracker: training, and anything else worth
 doing regularly (learning, health, mind, habits being broken). Keep each one
 weekly, watch the grid fill. Everything is live: the public site, the blog, the
-status page, and the product itself: `api` (FastAPI, ~265 routes, ~285 tests) at
+status page, and the product itself: `api` (TypeScript Hono on Cloudflare Workers + D1, ~265 routes, ~1,300 tests) at
 `api.pacestreak.com` and `app` (React 19 PWA, ~120 unit tests, Playwright e2e) at
 `app.pacestreak.com`. `HANDOFF.md` in this folder is the detailed history:
 every decision, the questions asked and answered, and what's left.
@@ -65,7 +65,7 @@ personal Upptime instance monitoring `status.rajpoot.dev`. Separate thing.
 pacestreak.com        301 → www          Cloudflare Redirect Rule
 www.pacestreak.com    web    (live)      Cloudflare Pages, Git-connected
 app.pacestreak.com    app    (live)      Cloudflare Pages, Git-connected
-api.pacestreak.com    api    (live)      FastAPI Cloud, DNS-only CNAME
+api.pacestreak.com    api    (live)      Cloudflare Workers custom domain
 blog.pacestreak.com   blog   (live)      Cloudflare Pages, Git-connected
 status.pacestreak.com status (live)      GitHub Pages, DNS-only (grey cloud)
 ```
@@ -77,8 +77,9 @@ eight failure modes, all of which actually happened here.
 ### Deployment
 
 **Push to `main` deploys.** `web`, `blog` and `app` are Git-connected Cloudflare
-Pages projects; `api` deploys through FastAPI Cloud's GitHub integration (see Outstanding
-work, item 1).
+Pages projects; `api` deploys through Workers Builds (push to `main` applies
+D1 migrations, then deploys production; other branches deploy `--env staging`
+to `pacestreak-api-staging.alzywelzy.workers.dev`).
 The Pages repos have no deploy workflow and no API token; their CI exists only
 to fail a PR before it reaches `main`.
 
@@ -89,8 +90,9 @@ cd web && npx wrangler pages deployment list --project-name=pacestreak
 # blog's project is `pacestreak-blog`
 ```
 
-The available Cloudflare API token is **`zone:read` only** — it cannot purge
-cache or change Pages config. Those need the dashboard.
+`wrangler` on the owner's machine is logged in with OAuth (account
+`fef2509f0377fba1f3201a655090ec0a`) and can manage Workers, D1, Queues and R2.
+Cache purges and Pages settings still need the dashboard.
 
 ---
 
@@ -248,85 +250,70 @@ and failed in CI on npm 10. Cloudflare runs the same command.
 ## Local development of the product
 
 ```bash
-cd api && make dev            # api :8000, postgres :5432, redis :6379, worker
-cd app && npm run dev         # :5173, talks to :8000
+cd api && pnpm install && pnpm wrangler d1 migrations apply pacestreak --local
+cd api && pnpm dev            # wrangler dev, local D1/Queues/R2 under .wrangler/
+cd app && npm run dev         # :5173; set PUBLIC_API_BASE_URL to the API's port
 ```
 
-- **`make test` truncates every table in the database it points at**, including
-  the dev admin account. Run tests against `pacestreak_test` (see
-  `api/README.md#tests`).
-- The dev compose override now mounts `alembic/`; run migrations with
-  `make migrate`.
-- Dev admin: `admin@pacestreak.com` (password given in the session that created it, not stored in git). **Change
-  it.** Reserved handles (anything spelling "pacestreak") can only be assigned
+- Secrets live in the gitignored `api/.dev.vars` (`api/README.md` has the
+  `openssl` commands). `IP_LIMITS_OFF=1` lifts the per-IP minute limits for the
+  app's Playwright suite; the config gate refuses it outside development.
+- Tests (`pnpm exec vitest run`) run in isolated workerd D1 databases: there is
+  no shared database to truncate any more. The Python stack (Docker on :8000)
+  is on api branch `old` only.
+- Email is `console` in development and staging: codes print to the log.
+- Reserved handles (anything spelling "pacestreak") can only be assigned
   through `POST /v1/admin/users/{id}/official`.
-- Email is `console` in development: verification, password-reset and
-  email-change **6-digit codes** print to the API log (codes, not links,
-  since 2026-09-27).
-- Dev containers run as the host user (`HOST_UID`, default 1000), so
-  `api/keys/*.pem` stay 0600. Production takes keys as PEM environment
-  variables and mounts no key files.
 
 ## Outstanding work
 
-**Read `HANDOFF.md` for the full list and reasoning.** In short:
+**Read `HANDOFF.md` for history.** In short:
 
 ### How production runs
 
-1. **API: FastAPI Cloud, live since 2026-10-11** (before that a GCP VM from
-   2026-09-27; the GCP projects are deleted). App `pacestreak-api` on the free
-   plan (0.1 vCPU, scale-to-zero, us-east-1), custom domain
-   `api.pacestreak.com`, Neon Postgres, Upstash Redis. Push to `api` main →
-   FastAPI Cloud's GitHub integration deploys it; the `Migrate` workflow runs
-   `alembic upgrade head` when `alembic/**` changes (it lands about a minute
-   after the deploy, so migrations must stay backward compatible); the `Worker
-   tick` workflow runs `app.worker --once` every five minutes from the GHCR
-   image, with the environment in the `WORKER_ENV_JSON` secret. Check with
-   `fastapi cloud deployments list` and `gh run list -R PaceStreak/api`;
-   `infra/RUNBOOK.md` has the failure modes. Environment variables live in two
-   places (FastAPI Cloud and `WORKER_ENV_JSON`): change both.
-2. **Email: Brevo SMTP.** Domain authenticated (SPF/DKIM); the branded
-   tracking subdomain is deliberately off, so verify/reset codes never route
-   through a third-party tracking domain. Free tier: 300 mails a day.
-3. **Cloudflare Turnstile**, since 2026-09-27, guards signup, login,
-   forgot-password, resend-verification and recover. Keys live in the
-   gitignored `app/.env` and `api/.env`; `TURNSTILE_SECRET_KEY` is required
-   in production.
-4. **App:** Cloudflare Pages, Git-connected, custom domain attached.
-5. **Monitoring:** Upptime in `status/.upptimerc.yml` watches every host,
-   including `api.pacestreak.com/health`, plus each TLS certificate.
-6. **`/privacy` names every provider.** It still lists Google Cloud and
-   needs FastAPI Cloud and GitHub (the worker runs in Actions); see
-   `HANDOFF.md` §6 before changing it, because a material edit bumps
-   `terms_version`.
+1. **API: Cloudflare Workers, Free plan, live since 2026-10-19** (owner
+   decision: try Free first). D1 `pacestreak` in `apac`, R2 `pacestreak-photos`
+   and `pacestreak-staging`, queue `pacestreak-jobs` with DLQ, three cron
+   triggers. The Python code is on api branch `old`; its Actions worker is gone.
+   Whether the FastAPI Cloud app, Upstash and the GHCR images were shut down
+   is unconfirmed: check before assuming. **Free-plan limits shape the
+   code:** 10 ms CPU per request (no `cpu_ms` setting allowed), **50 D1 queries
+   per invocation**, 100,000 requests a day, **5 cron triggers per account**
+   (production uses 3, so staging has none). Moving to Workers Paid ($5/month)
+   lifts all of them; `api/docs/rewrite/CUTOVER.md` lists what to change.
+2. **Staging:** Worker `pacestreak-api-staging`, D1 `pacestreak-staging`, its
+   own queues and buckets, console mail, no crons.
+3. **Email: Brevo SMTP** (`MAILER=smtp`, Worker secrets `SMTP_USER` and
+   `SMTP_PASSWORD`). Free tier: **300 mails a day**, shared by sign-in codes,
+   resets, reminders, digests and error alerts. Cloudflare Email Service is
+   wired in the code (`MAILER=cloudflare`) for when the domain is onboarded.
+4. **Cloudflare Turnstile** guards signup, login, forgot-password,
+   resend-verification and recover. Siteverify is retried once, then fails
+   closed with 503.
+5. **Backups:** D1 Time Travel (7 days on Free) plus a nightly copy into Neon
+   Postgres schema `d1_backup` (`api/.github/workflows/backup.yml`, 23:30 IST).
+6. **Monitoring:** Upptime in `status/.upptimerc.yml` (`/health`,
+   `/health/worker`, TLS); the hourly `error_alerts` job emails new server
+   errors.
+7. **`/privacy` names every provider** (Cloudflare, Brevo, Neon). A material
+   edit bumps `terms_version` in `api/src/env.ts` (`SETTINGS.termsVersion`),
+   which makes every account accept again.
 
-### What's left (details in HANDOFF.md §4 and §6)
+### What's left
 
-1. **Rotate the dev admin password:** `make set-password email=admin@pacestreak.com`.
-2. **Rotate every credential ever pasted into a chat session** (Cloudflare
-   token, R2 key, GHCR PAT). None is in git, but a transcript counts as leaked.
-   Rotate API secrets in FastAPI Cloud **and** `WORKER_ENV_JSON`.
-3. The API's free plan is 0.1 vCPU; if it proves too slow, FastAPI Cloud's paid
-   plan or a small VPS is the next step (`infra/DECISIONS.md`).
-4. An AI vendor for the coach features is **deferred by the user**, not
-   declined. Don't add one unasked.
-
-Done on 2026-10-02: the stale `www` cache was purged and Web Analytics was
-turned off (both by the owner, in the dashboard). `/privacy` and `/terms`
-were reviewed against the code, GDPR and common FOSS practice by an AI
-assistant at the owner's request, not by a lawyer; a professional review is
-still advisable if the user base grows or money is ever involved. Keep both
-pages true to the code, and bump `terms_version` in `api/app/config.py` with
-any material change (that makes every account accept again).
+1. **The only account is `admin@pacestreak.com`**, and the owner trains on it.
+   Rotate its password, and give day-to-day use its own non-admin account.
+2. **Rotate every credential ever pasted into a chat session.**
+3. **Fit the Free plan's 50 D1 queries per invocation everywhere**, or move to
+   Workers Paid.
+4. **Email headroom:** onboard `pacestreak.com` in Cloudflare Email Service, or
+   accept Brevo's 300 a day.
+5. An AI vendor for the coach features is **deferred by the user**. Don't add
+   one unasked.
+6. `/privacy` and `/terms` were reviewed by an AI assistant, not a lawyer.
 
 **Declined by the owner, don't re-propose:** a governing-law clause in
 `/terms`.
-
-**Backups (owner decision, 2026-10-19, reversing the earlier "no off-host
-backups"):** D1 Time Travel, plus a nightly copy of the whole D1 database in
-Neon Postgres, schema `d1_backup` (`api/.github/workflows/backup.yml`, 23:30
-IST). The Python-era Neon tables were dumped to the owner's machine first.
-`/privacy` must describe both before it is next published.
 
 The questions already asked (hosting, email, waitlist, habits, languages),
 the options offered and the user's answers are in `HANDOFF.md` §5. Don't
@@ -338,11 +325,14 @@ calendar-and-X mark (see "Visual world" above).
 
 ### Operations quick reference
 
-- Admin tooling: `make create-admin|set-password email=…`,
-  `python -m app.cli set-role`.
-- Backups: `make backup` (dumps, then test-restores);
-  `scripts/restore.sh FILE`.
-- CI runs in `api`, `app`, `web` and `blog`; `api` CI also runs `alembic check`.
+- Admin: `pnpm admin create-admin|set-password|set-role …` in `api`
+  prints SQL (needs `PEPPER` for passwords); apply it with
+  `pnpm wrangler d1 execute pacestreak --remote --file <sql>`.
+- Logs: `pnpm wrangler tail` (production) or `--env staging`.
+- Database: `pnpm wrangler d1 time-travel` for restores; the Neon copy is the
+  off-host fallback.
+- CI runs in `api`, `app`, `web` and `blog`; `api` CI also checks bundle size,
+  pytest-name parity and D1 query plans.
 
 ## Corrections worth carrying forward
 
