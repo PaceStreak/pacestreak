@@ -77,11 +77,11 @@ eight failure modes, all of which actually happened here.
 ### Deployment
 
 **Push to `main` deploys.** `web`, `blog` and `app` are Git-connected Cloudflare
-Pages projects. **`api` is the exception: Workers Builds is not connected, so
-pushing `main` deploys nothing.** Deploy by hand from a clean `main`:
-`pnpm wrangler d1 migrations apply pacestreak --remote`, then
-`pnpm wrangler deploy` (staging: the same with `pacestreak-staging` and
-`--env staging`, at `pacestreak-api-staging.alzywelzy.workers.dev`). Never run
+Pages projects; `api` deploys through Workers Builds on push to `main`
+(build `pnpm run build`, deploy `pnpm wrangler d1 migrations apply pacestreak --remote && pnpm wrangler deploy`, so migrations land first; the
+migration step was added 2026-10-21). Staging is deployed by hand: the same
+commands with `pacestreak-staging` and `--env staging`, at
+`pacestreak-api-staging.alzywelzy.workers.dev`. Never run
 `wrangler triggers deploy` casually: it counts as a production deployment.
 The Pages repos have no deploy workflow and no API token; their CI exists only
 to fail a PR before it reaches `main`.
