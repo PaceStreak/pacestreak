@@ -68,6 +68,7 @@ app.pacestreak.com    app    (live)      Cloudflare Pages, Git-connected
 api.pacestreak.com    api    (live)      Cloudflare Workers custom domain
 blog.pacestreak.com   blog   (live)      Cloudflare Pages, Git-connected
 status.pacestreak.com status (live)      GitHub Pages, DNS-only (grey cloud)
+docs.pacestreak.com   infra  (live)      Cloudflare Pages (infra/site), deployed by hand until Git-connected
 ```
 
 Full detail in `infra/TOPOLOGY.md`, `infra/RUNBOOK.md`, `infra/DECISIONS.md`.
@@ -323,7 +324,7 @@ the options offered and the user's answers are in `HANDOFF.md` §5. Don't
 re-ask; "decide later" means still open, not declined. The waitlist was
 **skipped by the user**.
 
-The blog has **ninety-five posts**. The logo is the lime bolt, not the
+The blog has **ninety-six posts**. The logo is the lime bolt, not the
 calendar-and-X mark (see "Visual world" above).
 
 ### Operations quick reference
